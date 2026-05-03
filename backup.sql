@@ -1,6 +1,9 @@
+DROP DATABASE IF EXISTS DB_INFINITY_SCHOOL;
 CREATE DATABASE DB_INFINITY_SCHOOL;
 USE DB_INFINITY_SCHOOL;
 
+
+-- TABELAS CENTRAIS --------INICIO--------
 CREATE TABLE `tb_pessoa` (
   `pk_cpf` char(11) PRIMARY KEY NOT NULL,
   `primeiro_nome` varchar(15) NOT NULL,
@@ -10,6 +13,7 @@ CREATE TABLE `tb_pessoa` (
   `deficiencia` enum('Visual','Auditiva','Motora','Intelectual','Multipla','Nenhuma') DEFAULT 'Nenhuma' not null,
   `etnia` enum('Branca','Preta','Parda','Amarela','Indígena','Outro/Prefiro não responder') not null,
   
+
   -- CHECA, COM O OPERADOR REGEXP, SE, DO INICIO AO FIM DO VALOR, TEM SOMENTE DIGITOS DO 0-9  E SE SÃO EXATOS 11 DIGITOS
   CHECK (pk_cpf REGEXP '^[0-9]{11}$')
 );
@@ -86,7 +90,6 @@ CREATE TABLE `tb_endereco` (
   CHECK (pk_numero >= 0)
 );
 
--- ASSOCIATIVA QUE PERMITE UMA PESSOA TER MAIS DE UM ENDEREÇO E VICE-VERSA
 CREATE TABLE `tb_pessoa_endereco` (
 	`pk_fk_cpf` char(11) NOT NULL,
 	`pk_fk_cep` char(8) NOT NULL,
@@ -100,9 +103,13 @@ CREATE TABLE `tb_pessoa_endereco` (
   FOREIGN KEY (`pk_fk_cep`, `pk_fk_numero`) REFERENCES tb_endereco(`pk_cep`, `pk_numero`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- TABELAS CENTRAIS --------FIM--------
+
+-- TABELAS RH --------INICIO--------
+
 CREATE TABLE `tb_formacao` (
   `pk_id_formacao` int PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `nome_formacao` varchar(255) NOT NULL
+  `nome_formacao` varchar(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE `tb_departamento` (
@@ -111,8 +118,9 @@ CREATE TABLE `tb_departamento` (
 );
 
 CREATE TABLE `tb_cargo` (
+
   `pk_id_cargo` int PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `nome_cargo` varchar(255) NOT NULL
+  `nome_cargo` varchar(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE `tb_cargo_departamento` (
@@ -198,7 +206,9 @@ CREATE TABLE `tb_ferias` (
   CHECK (data_fim >= data_inicio),
   
   -- GARANTE QUE AS FÉRIAS DUREM AO MENOS UM DIA
-  CHECK (dias_ferias > 0)
+  CHECK (dias_ferias > 0),
+  
+  UNIQUE (data_inicio, fk_n_contratacao)
 );
 
 CREATE TABLE `tb_ponto` (
@@ -216,7 +226,9 @@ CREATE TABLE `tb_ponto` (
   CHECK (
   hora_saida IS NULL 
   OR hora_saida > hora_entrada
-  )
+  ),
+  
+  UNIQUE(fk_n_contratacao,hora_entrada,`data`) 
 );
 
 CREATE TABLE `tb_folha_pagamento` (
@@ -247,7 +259,9 @@ CREATE TABLE `tb_historico_pagamento` (
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
   
   -- CHECA SE O SALÁRIO ATUAL É MAIOR OU IGUAL A ZERO. AFINAL, NÃO DEVE SER MENOR.
-  CHECK (salario_atual >= 0)
+  CHECK (salario_atual >= 0),
+  
+  UNIQUE(fk_n_contratacao, data_alteracao)
 );
 
 CREATE TABLE `tb_provento` (
@@ -261,7 +275,9 @@ CREATE TABLE `tb_provento` (
   REFERENCES tb_folha_pagamento(pk_id_folha)ON DELETE CASCADE ON UPDATE CASCADE,
   
   -- GARANTE QUE O VALOR DO PROVENTO NÃO SEJA NEGATIVO
-  CHECK (valor >= 0)
+  CHECK (valor >= 0),
+  
+  UNIQUE (fk_id_folha, tipo)
 );
 
 CREATE TABLE `tb_desconto` (
@@ -275,7 +291,9 @@ CREATE TABLE `tb_desconto` (
   REFERENCES tb_folha_pagamento(pk_id_folha)ON DELETE CASCADE ON UPDATE CASCADE,
   
   -- GARANTE QUE O VALOR DO DESCONTO NÃO SEJA NEGATIVO
-  CHECK (valor >= 0)
+  CHECK (valor >= 0),
+  
+  UNIQUE (fk_id_folha, tipo)
 );
 
 CREATE TABLE `tb_afastamento` (
@@ -294,7 +312,8 @@ CREATE TABLE `tb_afastamento` (
   CHECK (
     data_fim IS NULL 
     OR data_fim >= data_inicio
-  )
+  ),
+  UNIQUE (fk_n_contratacao, data_inicio)
 );
 
 CREATE TABLE `tb_treinamento` (
@@ -316,10 +335,14 @@ CREATE TABLE `tb_treinamento` (
   CHECK (
     data_conclusao IS NULL 
     OR data_conclusao >= data_inicio
-  )
+  ),
+  UNIQUE(fk_n_contratacao, data_inicio)
 );
 
--- UNIDADE DA INFINITY SCHOOL ASSOCIADA
+-- TABELAS RH --------FIM--------
+
+-- TABELAS ACADEMICO --------INICIO--------
+
 CREATE TABLE `tb_unidade` (
   `pk_id_unidade` int PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `nome` varchar(50) UNIQUE NOT NULL,
@@ -352,8 +375,6 @@ CREATE TABLE `tb_aluno` (
   REFERENCES tb_pessoa(pk_cpf)ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-
-
 CREATE TABLE `tb_disciplina` (
   pk_fk_id_curso int NOT NULL,
   pk_id_disciplina int NOT NULL,
@@ -382,7 +403,9 @@ CREATE TABLE `tb_turma` (
   FOREIGN KEY (fk_n_contratacao)
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (fk_id_unidade)
-  REFERENCES tb_unidade(pk_id_unidade)ON DELETE CASCADE ON UPDATE CASCADE
+  REFERENCES tb_unidade(pk_id_unidade)ON DELETE CASCADE ON UPDATE CASCADE,
+  
+  UNIQUE (fk_id_curso, fk_id_unidade, data_inicio)
 );
 
 CREATE TABLE `tb_matricula` (
@@ -423,6 +446,10 @@ CREATE TABLE `tb_grade_horaria` (
   CHECK (hora_fim > pk_hora_inicio)
 );
 
+-- TABELAS ACADEMICO --------FIM--------
+
+-- TABELAS FINANCEIRO --------INICIO--------
+
 CREATE TABLE `tb_contrato` (
   `pk_registro_nrcontrato` int PRIMARY KEY AUTO_INCREMENT,
   `fk_ra` varchar(10) NOT NULL,
@@ -438,7 +465,9 @@ CREATE TABLE `tb_contrato` (
   REFERENCES tb_turma(`pk_id_turma`)ON DELETE RESTRICT ON UPDATE CASCADE,
   
   -- GARANTE QUE A DATA DE FIM NÃO É MENOR QUE A DE INÍCIO
-  CHECK (`data_fim` >= `data_inicio`)
+  CHECK (`data_fim` >= `data_inicio`),
+  
+  UNIQUE (fk_ra, fk_id_turma, data_inicio)
 );
 
 CREATE TABLE `tb_mensalidade` (
@@ -456,7 +485,9 @@ CREATE TABLE `tb_mensalidade` (
   -- RESTRIÇÃO QUE GARANTE QUE A DATA DE VENCIMENTO É DEPOIS DA EMISSÃO
   CHECK (`data_vencimento` >= `data_emissao`),
   -- GARANTTE QUE O VALOR DE UMA MENSALIDADE É MAIOR QUE 0
-  CHECK (`valor` > 0)
+  CHECK (`valor` > 0),
+  
+  UNIQUE (fk_registro_nrcontrato, data_emissao)
 );
 
 CREATE TABLE `tb_inadimplencia` (
@@ -473,7 +504,7 @@ CREATE TABLE `tb_inadimplencia` (
 
 CREATE TABLE `tb_produto` (
   `pk_id_produto` int PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `nome_produto` varchar(45) NOT NULL
+  `nome_produto` varchar(45) NOT NULL UNIQUE
 );
 
 CREATE TABLE `tb_fornecedor` (
@@ -493,7 +524,6 @@ CREATE TABLE `tb_fornecedor` (
   CHECK (telefone REGEXP '^[0-9]{10,11}$')
 );
 
--- FAZ O REGISTRO DE UMA COMPRA NUMA EMPRESA
 CREATE TABLE `tb_compra` (
   `pk_nfe` char(44) PRIMARY KEY,
   `fk_cnpj` char(14) NOT NULL,
@@ -508,13 +538,16 @@ CREATE TABLE `tb_servico` (
   `desc_servico` varchar(45) NOT NULL,
   `valor_servico` decimal(10,2) NOT NULL,
   `fk_cpf` char(11) NOT NULL,
+  `data_hora` datetime NOT NULL,
   
   -- LIGA O SERVIÇO A UM PRESTADOR
   FOREIGN KEY (fk_cpf)
   REFERENCES tb_pessoa(pk_cpf)ON DELETE RESTRICT ON UPDATE CASCADE,
   
   -- GARANTE QUE O VALOR DO SERVIÇO NÃO É NEGATIVO
-  CHECK (valor_servico >= 0)
+  CHECK (valor_servico >= 0),
+  
+  UNIQUE (fk_cpf, data_hora)
 );
 
 CREATE TABLE `tb_conta_pagar` (
@@ -524,18 +557,23 @@ CREATE TABLE `tb_conta_pagar` (
   `data_pagamento` date NOT NULL,
   `data_vencimento` date NOT NULL,
   
-  -- LIGA A COMPRA/O SERVIÇO COM A TABELA
   FOREIGN KEY (`fk_nfe`)
-  REFERENCES tb_compra(`pk_nfe`)ON DELETE RESTRICT ON UPDATE CASCADE,
+  REFERENCES tb_compra(`pk_nfe`)
+  ON DELETE RESTRICT
+  ON UPDATE RESTRICT,
+
   FOREIGN KEY (`fk_id_servico`)
-  REFERENCES tb_servico(`pk_id_servico`)ON DELETE RESTRICT ON UPDATE CASCADE,
+  REFERENCES tb_servico(`pk_id_servico`)
+  ON DELETE RESTRICT
+  ON UPDATE RESTRICT,
   
-  -- GARANTE QUE A TABELA POSSUA UMA CONTA >OU< UM SERVIÇO, NÃO PERMITINDO OS CAMPOS ESTAREM AMBOS VAZIOS OU AMBOS PREENCHIDOS
   CHECK (
     (fk_nfe IS NOT NULL AND fk_id_servico IS NULL)
     OR
     (fk_nfe IS NULL AND fk_id_servico IS NOT NULL)
-  )
+  ),
+    UNIQUE (fk_nfe, data_pagamento),
+    UNIQUE (fk_id_servico, data_pagamento)
 );
 
 CREATE TABLE `tb_item_compra` (
@@ -570,11 +608,16 @@ CREATE TABLE `tb_pagamento` (
   `fk_id_conta_receber` int NOT NULL,
   `valor_pago` decimal(10,2) NOT NULL,
   `data_pagamento` date NOT NULL,
-  `forma_pagamento` varchar(45) NOT NULL,
+  `forma_pagamento` ENUM('pix','dinheiro', 'debito', 'credito', 'boleto') NOT NULL,
   
   -- CHAVE ESTRANGEIRA QUE LIGA O PAGAMENTO COM A CONTA A RECEBER
   FOREIGN KEY (`fk_id_conta_receber`)
   REFERENCES tb_conta_receber(`pk_id_conta_receber`)ON DELETE RESTRICT ON UPDATE CASCADE,
 
-  CHECK (`valor_pago` > 0)
+  CHECK (`valor_pago` > 0),
+  UNIQUE (fk_id_conta_receber, data_pagamento)
 );
+
+-- TABELAS FINANCEIRO --------FIM--------
+
+
