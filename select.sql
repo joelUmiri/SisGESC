@@ -24,6 +24,32 @@ SELECT a.pk_ra, (
 
 -- SUBSELECT --------FIM--------
 
+-- ROLLBACK --------INICIO--------
+
+START TRANSACTION;
+INSERT INTO tb_pessoa (pk_cpf, primeiro_nome, sobrenome, data_nasc, genero, deficiencia, etnia)
+values ('94857230192', 'Ana2', 'Silva', '2005-03-12', 'Feminino', 'Nenhuma', 'Parda');
+UPDATE tb_pessoa
+SET primeiro_nome = 'João'
+WHERE pk_cpf = '94857230192';
+
+select * from tb_pessoa where pk_cpf='94857230192';
+
+ROLLBACK;
+
+-- ROLLBACK --------FIM--------
+
+-- COMMIT --------INICIO--------
+
+select * from tb_pessoa where pk_cpf='94857230192';
+
+START TRANSACTION;
+INSERT INTO tb_pessoa (pk_cpf, primeiro_nome, sobrenome, data_nasc, genero, deficiencia, etnia) values
+('94857230192', 'Ana2', 'Silva', '2005-03-12', 'Feminino', 'Nenhuma', 'Parda');
+COMMIT;
+
+-- COMMIT --------FIM--------
+
 -- JOIN --------INICIO--------
 
 select p.pk_cpf, p.primeiro_nome, p.sobrenome, a.pk_ra from tb_pessoa as p 
