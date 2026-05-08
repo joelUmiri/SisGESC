@@ -2,7 +2,6 @@ DROP DATABASE IF EXISTS DB_INFINITY_SCHOOL;
 CREATE DATABASE DB_INFINITY_SCHOOL;
 USE DB_INFINITY_SCHOOL;
 
-
 -- TABELAS CENTRAIS --------INICIO--------
 CREATE TABLE `tb_pessoa` (
   `pk_cpf` char(11) PRIMARY KEY NOT NULL,
@@ -12,7 +11,6 @@ CREATE TABLE `tb_pessoa` (
   `genero` enum('Masculino','Feminino','Outro') not null,
   `deficiencia` enum('Visual','Auditiva','Motora','Intelectual','Multipla','Nenhuma') DEFAULT 'Nenhuma' not null,
   `etnia` enum('Branca','Preta','Parda','Amarela','Indígena','Outro/Prefiro não responder') not null,
-  
 
   -- CHECA, COM O OPERADOR REGEXP, SE, DO INICIO AO FIM DO VALOR, TEM SOMENTE DIGITOS DO 0-9  E SE SÃO EXATOS 11 DIGITOS
   CHECK (pk_cpf REGEXP '^[0-9]{11}$')
@@ -637,7 +635,8 @@ CREATE TABLE dim_funcionario (
 
 CREATE TABLE dim_unidade (
 	sk_unidade INT PRIMARY KEY AUTO_INCREMENT,
-	nome_unidade varchar(50) UNIQUE,
+    id_unidade INT UNIQUE,
+	nome_unidade varchar(50),
 	logradouro varchar(100),
 	num_logradouro varchar(10),
 	complemento varchar(50)
@@ -675,6 +674,11 @@ CREATE TABLE dim_produto (
     -- categoria_produto VARCHAR(30)   -- Ex: 'Limpeza', 'Escritório', 'Informática'
 );
 
+CREATE TABLE dim_status (
+    sk_status INT PRIMARY KEY AUTO_INCREMENT,
+    status_nome VARCHAR(50) NOT NULL UNIQUE
+);
+
 CREATE TABLE dim_tempo (
     sk_tempo INT PRIMARY KEY, -- Formato YYYYMMDD (Ex: 20260506)
     data_completa DATE NOT NULL,
@@ -687,29 +691,37 @@ CREATE TABLE dim_tempo (
     semestre INT,
     flag_feriado TINYINT(1) DEFAULT 0, -- 1 para Sim, 0 para Não
     nome_feriado VARCHAR(50)
-    -- tipo_feriado VARCHAR(30) ,  dizer se é municipal, estadual, etc.
 );
 -- TABELAS DE DIMENSÃO --------FIM--------
 
 -- TABELAS FATO --------INICIO--------
 
--- 1. Fato Acadêmico-> Granularidade: Um registro por aluno, por turma e por período letivo.
+-- 1. Fato Acadêmico-> Granularidade: Um registro por aluno, por turma e por trimestre.
 CREATE TABLE fato_academico (
     sk_aluno INT NOT NULL,
     sk_turma INT NOT NULL,  -- Esta chave agora traz Curso e Disciplina junto
     sk_unidade INT NOT NULL,
     sk_tempo INT NOT NULL,
+    sk_status int not null,
     
     nota DECIMAL(4,2), -- Métrica não-aditiva
     total_faltas INT DEFAULT 0, -- Métrica aditiva
     
     qtd_matricula INT DEFAULT 1, -- Métrica aditiva
-    status_resultado VARCHAR(20), -- 'Aprovado', 'Reprovado', etc.
     
     FOREIGN KEY (sk_aluno) REFERENCES dim_aluno(sk_aluno),
     FOREIGN KEY (sk_turma) REFERENCES dim_turma(sk_turma),
     FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
-    FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo)
+    FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo),
+    FOREIGN KEY (sk_status) REFERENCES dim_status(sk_status),
+    
+    UNIQUE (sk_aluno,sk_turma,sk_tempo),
+    
+    PRIMARY KEY (
+        sk_aluno,
+        sk_turma,
+        sk_tempo
+    )
 );
 
 -- 2. Fato Financeiro-> Granularidade: Uma linha por transação financeira (seja entrada de mensalidade
@@ -735,9 +747,12 @@ CREATE TABLE fato_financeiro (
     FOREIGN KEY (sk_aluno) REFERENCES dim_aluno(sk_aluno),
     FOREIGN KEY (sk_fornecedor) REFERENCES dim_fornecedor(sk_fornecedor),
     FOREIGN KEY (sk_produto) REFERENCES dim_produto(sk_produto)
+    
+    -- pk
 );
 
 -- 3. Fato RH-> Granularidade: Um registro por funcionário, por unidade e por mês de referência.
+-- socorro
 CREATE TABLE fato_rh (
     sk_funcionario INT NOT NULL,
     sk_unidade INT NOT NULL,
