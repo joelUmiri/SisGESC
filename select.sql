@@ -13,14 +13,97 @@ select pk_id_pagamento, valor_pago, data_pagamento, forma_pagamento from tb_paga
 
 -- SUBSELECT --------INICIO--------
 
-select pk_cpf, primeiro_nome, sobrenome from tb_pessoa
-where pk_cpf in (
-  select fk_cpf from tb_aluno
+-- SUBSELECT QUE RETORNA CPF E NOME DOS ALUNOS CADASTRADOS
+EXPLAIN SELECT 
+    pk_cpf, 
+    CONCAT(primeiro_nome, ' ', sobrenome) AS 'Nome do Aluno'
+FROM tb_pessoa
+WHERE pk_cpf IN (
+    SELECT fk_cpf 
+    FROM tb_aluno
 );
 
-SELECT a.pk_ra, ( 
-	SELECT p.primeiro_nome FROM tb_pessoa AS p WHERE p.pk_cpf = a.fk_cpf 
-) AS nome_aluno FROM tb_aluno AS a;
+-- SUBSELECT QUE RETORNA NOME E RA DOS ALUNOS
+
+SELECT 
+    a.pk_ra AS 'RA', 
+    (
+        SELECT CONCAT(p.primeiro_nome, ' ', p.sobrenome)
+        FROM tb_pessoa AS p 
+        WHERE p.pk_cpf = a.fk_cpf
+    ) AS 'Nome do Aluno'
+FROM tb_aluno AS a;
+
+-- RETORNA O NOME COMPLETO DOS ALUNOS CUJA SOMA DAS FALTAS TOTAIS É MAIOR QUE QUINZE.
+SELECT 
+    CONCAT(p.primeiro_nome, ' ', p.sobrenome) AS 'Aluno com Alto Absenteísmo'
+FROM tb_pessoa p
+JOIN tb_aluno a ON p.pk_cpf = a.fk_cpf
+WHERE a.pk_ra IN (
+    SELECT pk_fk_ra
+    FROM tb_matricula
+    GROUP BY pk_fk_ra
+    HAVING SUM(total_faltas) > 15
+);
+
+-- SUBSELECT QUE RETORNA OS ALUNOS CUJA MENOR NOTA É 8 OU MAIOR
+SELECT CONCAT(p.primeiro_nome, ' ', p.sobrenome) AS Aluno_Destaque
+FROM tb_pessoa p
+JOIN tb_aluno a ON p.pk_cpf = a.fk_cpf
+WHERE a.pk_ra IN (
+    SELECT pk_fk_ra
+    FROM tb_matricula
+    GROUP BY pk_fk_ra
+    HAVING MIN(nota1) >= 8.0
+);
+
+-- SELECT QUE FALA AS TURMAS QUE TEM AO MENOS UM ALUNO QUE EVADIU OU TRANCOU
+SELECT t.pk_id_turma
+FROM tb_turma t
+WHERE t.pk_id_turma IN (
+    SELECT pk_fk_id_turma
+    FROM tb_matricula
+    WHERE status_matricula IN ('Evadido', 'Trancado')
+    GROUP BY pk_fk_id_turma
+    HAVING COUNT(*) >= 1
+);
+
+-- SUBSELECT QUE MOSTRA OS FUNCIONÁRIOS QUE GANHAM UM SALÁRIO BRUTO DE MAIS DE 5 MIL REAIS
+SELECT 
+    CONCAT(p.primeiro_nome, ' ', p.sobrenome) AS 'Funcionario_Alto_Custo'
+FROM tb_pessoa p
+JOIN tb_funcionario f ON p.pk_cpf = f.fk_cpf
+WHERE f.pk_n_contratacao IN (
+    SELECT fk_n_contratacao
+    FROM tb_folha_pagamento
+    GROUP BY fk_n_contratacao
+    HAVING SUM(salario_base) > 5000
+);
+
+-- SUBSELECT QUE MOSTRA OS FUNCIONÁRIOS QUE TEM MAIS DE 20 HORAS REGISTRADAS DE TREINO
+SELECT 
+    CONCAT(p.primeiro_nome, ' ', p.sobrenome) AS 'Funcionario_Qualificado'
+FROM tb_pessoa p
+JOIN tb_funcionario f ON p.pk_cpf = f.fk_cpf
+WHERE f.pk_n_contratacao IN (
+    SELECT fk_n_contratacao
+    FROM tb_treinamento
+    GROUP BY fk_n_contratacao
+    HAVING SUM(carga_horaria) > 20
+);
+
+-- RETORNA OS FORNECEDORES QUE POSSUEM UM ALTO VOLUME DE ITENS VENDIDOS PARA A ESCOLA
+SELECT 
+    f.nome_fantasia AS 'Fornecedor Estratégico',
+    f.pk_cnpj AS 'CNPJ'
+FROM tb_fornecedor f
+WHERE f.pk_cnpj IN (
+    SELECT c.fk_cnpj
+    FROM tb_item_compra ic
+    JOIN tb_compra c ON ic.pk_fk_nfe = c.pk_nfe
+    GROUP BY c.fk_cnpj
+    HAVING SUM(ic.qtd) > 10
+);
 
 -- SUBSELECT --------FIM--------
 
@@ -51,18 +134,5 @@ COMMIT;
 -- COMMIT --------FIM--------
 
 -- JOIN --------INICIO--------
-
-select p.pk_cpf, p.primeiro_nome, p.sobrenome, a.pk_ra from tb_pessoa as p 
-join tb_aluno as a on pk_cpf = fk_cpf;
-
-select p.pk_cpf, p.primeiro_nome, p.sobrenome, a.pk_ra, m.data_matricula, m.status_matricula from tb_pessoa as p 
-join tb_aluno as a on pk_cpf = fk_cpf
-join tb_matricula as m on pk_ra = pk_fk_ra;
-
-select p.pk_cpf, p.primeiro_nome, p.sobrenome, f.pk_n_contratacao, f.dt_admissao, c.nome_cargo, d.departamento from tb_pessoa as p
-join tb_funcionario as f on pk_cpf = fk_cpf
-join tb_func_cargo on pk_n_contratacao = pk_fk_n_contratacao
-join tb_cargo as c on pk_fk_id_cargo = pk_id_cargo
-join tb_departamento as d on pk_id_departamento = pk_fk_id_departamento;
 
 -- JOIN --------FIM--------
