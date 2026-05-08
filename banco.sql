@@ -18,33 +18,6 @@ CREATE TABLE `tb_pessoa` (
   CHECK (pk_cpf REGEXP '^[0-9]{11}$')
 );
 
--- GATILHO DE TB_PESSOA QUE GARANTE QUE A DATA DE NASCIMENTO NÃO PODE SER SUPERIOR A ATUAL DATA.
--- UPDATE: IMPEDE DE ATUALIZAR UMA DATA FUTURA
-DELIMITER $$
-CREATE TRIGGER trg_check_data_nasc_update
-BEFORE UPDATE ON tb_pessoa
-FOR EACH ROW
-BEGIN
-  IF NEW.data_nasc > CURRENT_DATE THEN
-    SIGNAL SQLSTATE '45000'
-    SET MESSAGE_TEXT = 'Data de nascimento não pode ser no futuro';
-  END IF;
-END$$
-DELIMITER ;
-
--- INSERT: IMPEDE DE INSERIR UMA DATA FUTURA
-DELIMITER $$
-CREATE TRIGGER trg_check_data_nasc_insert
-BEFORE INSERT ON tb_pessoa
-FOR EACH ROW
-BEGIN
-  IF NEW.data_nasc > CURRENT_DATE THEN
-    SIGNAL SQLSTATE '45000'
-    SET MESSAGE_TEXT = 'Data de nascimento não pode ser no futuro';
-  END IF;
-END$$
-DELIMITER ;
-
 CREATE TABLE `tb_email` (
   `pk_email` varchar(40) PRIMARY KEY NOT NULL,
   `fk_cpf` char(11) NOT NULL,
@@ -345,7 +318,7 @@ CREATE TABLE `tb_treinamento` (
 
 CREATE TABLE `tb_unidade` (
   `pk_id_unidade` int PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `nome` varchar(50) UNIQUE NOT NULL,
+  `nome_unidade` varchar(50) UNIQUE NOT NULL,
   `logradouro` varchar(100) NOT NULL,
   `num_logradouro` varchar(10) NOT NULL,
   `complemento` varchar(50)
@@ -413,7 +386,10 @@ CREATE TABLE `tb_matricula` (
   pk_fk_id_turma INT NOT NULL,
   data_matricula DATE NOT NULL,
   status_matricula ENUM('Cursando','Aprovado','Reprovado','Trancado','Evadido') NOT NULL DEFAULT 'Cursando',
-  nota_final DECIMAL(4,2),
+  nota1 DECIMAL(4,2),
+  nota2 DECIMAL(4,2),
+  nota3 DECIMAL(4,2),
+  nota4 DECIMAL(4,2),
   total_faltas INT DEFAULT 0,
   
   -- CHAVE COMPOSTA DO ALUNO E DA TURMA EM QUE ELE SE ENCONTRA
@@ -426,7 +402,10 @@ CREATE TABLE `tb_matricula` (
   REFERENCES tb_turma(pk_id_turma)ON DELETE CASCADE ON UPDATE CASCADE,
   
   -- GARANTE QUE A NOTA FINAL É UM NÚMERO ENTRE 0 E 10
-  CHECK (nota_final BETWEEN 0 AND 10)
+	check ((nota1 BETWEEN 0 AND 10 OR nota1 IS NULL) AND
+    (nota2 BETWEEN 0 AND 10 OR nota2 IS NULL) AND
+    (nota3 BETWEEN 0 AND 10 OR nota3 IS NULL) AND
+    (nota4 BETWEEN 0 AND 10 OR nota4 IS NULL))
 );
 
 CREATE TABLE `tb_grade_horaria` (
@@ -511,17 +490,25 @@ CREATE TABLE `tb_fornecedor` (
   `pk_cnpj` char(14) PRIMARY KEY,
   `razao_social` varchar(100) NOT NULL,
   `nome_fantasia` varchar(45) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `telefone` varchar(20) NOT NULL,
-  
   -- GARANTE QUE O CNPJ SEJA UM VALOR DE 14 DIGITOS DE 0 A 9
-  CHECK (pk_cnpj REGEXP '^[0-9]{14}$'),
-  
-  -- RESTRIÇÃO QUE CHECA SE O EMAIL ESTÁ NO MODELO: <ALGO ANTES DO '@'> <@> <ALGO DEPOIS DO '@'> <.> <ALGO DEPOIS DO '.'> 
-  CHECK (email REGEXP '^[^@]+@[^@]+\\.[^@]+$'),
-  
-  -- RESTRIÇÃO QUE GARANTE QUE SÓ HAVERÃO NÚMEROS NO TELEFONE, INDO DE 10 (FIXO) A 11 (MÓVEL)
-  CHECK (telefone REGEXP '^[0-9]{10,11}$')
+  CHECK (pk_cnpj REGEXP '^[0-9]{14}$')
+);
+
+CREATE TABLE `tb_email_fornecedor` (
+  `pk_email` varchar(100) PRIMARY KEY NOT NULL,
+  `fk_cnpj` char(14) NOT NULL,
+  FOREIGN KEY (fk_cnpj) REFERENCES tb_fornecedor(pk_cnpj) ON DELETE CASCADE ON UPDATE CASCADE,
+  CHECK (pk_email REGEXP '^[^@]+@[^@]+\\.[^@]+$')
+);
+
+CREATE TABLE `tb_telefone_fornecedor` (
+  `pk_ddd` char(2) NOT NULL,
+  `pk_numero` char(9) NOT NULL,
+  `fk_cnpj` char(14) NOT NULL,
+  PRIMARY KEY (`pk_ddd`, `pk_numero`),
+  FOREIGN KEY (fk_cnpj) REFERENCES tb_fornecedor(pk_cnpj) ON DELETE CASCADE ON UPDATE CASCADE,
+  CHECK (pk_ddd REGEXP '^[0-9]{2}$'),
+  CHECK (pk_numero REGEXP '^[0-9]{8,9}$')
 );
 
 CREATE TABLE `tb_compra` (
@@ -620,4 +607,164 @@ CREATE TABLE `tb_pagamento` (
 
 -- TABELAS FINANCEIRO --------FIM--------
 
+-- TABELAS DE DIMENSÃO --------INICIO--------
 
+CREATE TABLE dim_aluno (
+    sk_aluno INT PRIMARY KEY AUTO_INCREMENT,
+    ra VARCHAR(10) NOT NULL,
+    cpf CHAR(11) NOT NULL unique,
+    nome_completo VARCHAR(150) NOT NULL,
+    genero varchar(10),
+    etnia varchar(50),
+    deficiencia varchar(20),
+    data_nascimento DATE NOT NULL
+);
+
+CREATE TABLE dim_funcionario (
+	sk_funcionario int PRIMARY KEY AUTO_INCREMENT,
+	n_contratacao INT NOT NULL,
+	cpf CHAR(11) NOT NULL UNIQUE,
+	nome_completo VARCHAR(150) NOT NULL,
+    genero varchar(10),
+    etnia varchar(50),
+    deficiencia varchar(20),
+    data_nascimento DATE NOT NULL,
+	status_funcionario VARCHAR(20),
+	cargo VARCHAR(50),
+	departamento varchar(50),
+	formacao VARCHAR(255)
+);
+
+CREATE TABLE dim_unidade (
+	sk_unidade INT PRIMARY KEY AUTO_INCREMENT,
+	nome_unidade varchar(50) UNIQUE,
+	logradouro varchar(100),
+	num_logradouro varchar(10),
+	complemento varchar(50)
+);
+
+CREATE TABLE dim_turma (
+    sk_turma INT PRIMARY KEY AUTO_INCREMENT,
+    id_turma int unique,
+    cod_turma_operacional VARCHAR(120), -- Ex: 'ADS-101-2026'
+    nome_disciplina VARCHAR(50),       -- Atributo da disciplina
+    nome_curso VARCHAR(50),            -- Atributo do curso
+    turno varchar(20),
+    nome_professor_titular varchar(150),
+    data_inicio_turma DATE,
+    duracao_meses_curso INT,
+    carga_horaria_disciplina INT
+);
+
+CREATE TABLE dim_forma_pagamento (
+    sk_forma_pagamento INT PRIMARY KEY AUTO_INCREMENT,
+    forma_pagamento VARCHAR(30) NOT NULL unique -- Ex: 'Cartão de Crédito', 'Pix'
+);
+
+CREATE TABLE dim_fornecedor (
+    sk_fornecedor INT PRIMARY KEY AUTO_INCREMENT,
+    cnpj CHAR(14) NOT NULL unique,
+    razao_social VARCHAR(100),
+    nome_fantasia VARCHAR(45)
+);
+
+CREATE TABLE dim_produto (
+    sk_produto INT PRIMARY KEY AUTO_INCREMENT,
+    codigo_produto_operacional INT unique, -- O ID que está na tb_produto
+    nome_produto VARCHAR(45)
+    -- categoria_produto VARCHAR(30)   -- Ex: 'Limpeza', 'Escritório', 'Informática'
+);
+
+CREATE TABLE dim_tempo (
+    sk_tempo INT PRIMARY KEY, -- Formato YYYYMMDD (Ex: 20260506)
+    data_completa DATE NOT NULL,
+    dia INT,
+    mes INT,
+    nome_mes VARCHAR(15),
+    trimestre INT,
+    ano INT,
+    dia_semana VARCHAR(15),
+    semestre INT,
+    flag_feriado TINYINT(1) DEFAULT 0, -- 1 para Sim, 0 para Não
+    nome_feriado VARCHAR(50)
+    -- tipo_feriado VARCHAR(30) ,  dizer se é municipal, estadual, etc.
+);
+-- TABELAS DE DIMENSÃO --------FIM--------
+
+-- TABELAS FATO --------INICIO--------
+
+-- 1. Fato Acadêmico-> Granularidade: Um registro por aluno, por turma e por período letivo.
+CREATE TABLE fato_academico (
+    sk_aluno INT NOT NULL,
+    sk_turma INT NOT NULL,  -- Esta chave agora traz Curso e Disciplina junto
+    sk_unidade INT NOT NULL,
+    sk_tempo INT NOT NULL,
+    
+    nota DECIMAL(4,2), -- Métrica não-aditiva
+    total_faltas INT DEFAULT 0, -- Métrica aditiva
+    
+    qtd_matricula INT DEFAULT 1, -- Métrica aditiva
+    status_resultado VARCHAR(20), -- 'Aprovado', 'Reprovado', etc.
+    
+    FOREIGN KEY (sk_aluno) REFERENCES dim_aluno(sk_aluno),
+    FOREIGN KEY (sk_turma) REFERENCES dim_turma(sk_turma),
+    FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
+    FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo)
+);
+
+-- 2. Fato Financeiro-> Granularidade: Uma linha por transação financeira (seja entrada de mensalidade
+-- ou saída para compra de material/serviço) por unidade e por data.
+CREATE TABLE fato_financeiro (
+    sk_tempo INT NOT NULL,
+    sk_unidade INT NOT NULL,
+    sk_forma_pagamento INT NOT NULL,
+    sk_aluno INT DEFAULT 0,      -- Se for saída (compra), pode ser 0 ou NULL
+    sk_fornecedor INT DEFAULT 0, -- Se for entrada (mensalidade), pode ser 0 ou NULL
+    sk_produto INT DEFAULT 0,    -- Usado apenas para compras de material
+    
+    valor_pago DECIMAL(10,2) DEFAULT 0.00, -- Métrica aditiva
+    valor_total_encargos DECIMAL(10,2) DEFAULT 0.00, -- Juros e multas recebidos, métrica aditiva
+    qtd_mensalidade_paga INT DEFAULT 0, -- Métrica aditiva
+    
+    valor_total_compra DECIMAL(10,2) DEFAULT 0.00, -- Métrica aditiva
+    quantidade_comprada INT DEFAULT 0, -- Métrica aditiva
+    
+    FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo),
+    FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
+    FOREIGN KEY (sk_forma_pagamento) REFERENCES dim_forma_pagamento(sk_forma_pagamento),
+    FOREIGN KEY (sk_aluno) REFERENCES dim_aluno(sk_aluno),
+    FOREIGN KEY (sk_fornecedor) REFERENCES dim_fornecedor(sk_fornecedor),
+    FOREIGN KEY (sk_produto) REFERENCES dim_produto(sk_produto)
+);
+
+-- 3. Fato RH-> Granularidade: Um registro por funcionário, por unidade e por mês de referência.
+CREATE TABLE fato_rh (
+    sk_funcionario INT NOT NULL,
+    sk_unidade INT NOT NULL,
+    sk_tempo INT NOT NULL,
+    
+    -- Métricas Financeiras de RH
+    salario_base DECIMAL(10,2),  -- Métrica semi-aditiva
+    total_proventos DECIMAL(10,2), -- Métrica aditiva
+    total_descontos DECIMAL(10,2), -- Métrica aditiva
+    salario_liquido DECIMAL(10,2), -- Métrica semi-aditiva
+    
+    -- Métricas de Frequência e Horas
+    horas_trabalhadas DECIMAL(6,2),  -- Métrica aditiva
+    horas_extra DECIMAL(6,2), -- Métrica aditiva
+    qtd_faltas_ponto INT DEFAULT 0, -- Métrica aditiva
+    
+    -- Flags de Status no Período
+    flag_ferias TINYINT(1) DEFAULT 0, -- Métrica não-aditiva
+    flag_afastamento TINYINT(1) DEFAULT 0, -- Métrica não-aditiva
+    
+    -- Métricas de Desenvolvimento
+    qtd_treinamentos INT DEFAULT 0, -- Métrica aditiva
+    horas_treinamento DECIMAL(6,2) DEFAULT 0.00, -- Métrica aditiva
+
+    FOREIGN KEY (sk_funcionario) REFERENCES dim_funcionario(sk_funcionario),
+    FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
+    FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo)
+);
+
+-- TABELAS FATO --------FIM--------
