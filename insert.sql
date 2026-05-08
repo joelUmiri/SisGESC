@@ -4,6 +4,8 @@ USE DB_INFINITY_SCHOOL;
 -- 1. PESSOA
 -- ============================================================
 
+select count(*) from tb_pessoa;
+
 INSERT INTO tb_pessoa 
 (pk_cpf, primeiro_nome, sobrenome, data_nasc, genero, deficiencia, etnia)
 VALUES
@@ -40,11 +42,11 @@ VALUES
 ('32323232323', 'Marcos', 'Vieira', '1979-07-12', 'Masculino', 'Nenhuma', 'Parda'),
 ('34343434343', 'Tatiane', 'Correia', '1994-03-16', 'Feminino', 'Nenhuma', 'Branca');
 
-select count(*) from tb_pessoa;
-
 -- ============================================================
 -- 2. EMAIL
 -- ============================================================
+
+select count(*) from tb_email;
 
 INSERT INTO tb_email
 (pk_email, fk_cpf)
@@ -86,6 +88,8 @@ VALUES
 -- 3. TELEFONE
 -- ============================================================
 
+select count(*) from tb_telefone;
+
 INSERT INTO tb_telefone
 (pk_num_pais, pk_ddd, pk_numero, pk_fk_cpf)
 VALUES
@@ -124,6 +128,8 @@ VALUES
 -- 4. ENDERECO
 -- ============================================================
 
+select count(*) from tb_endereco;
+
 INSERT INTO tb_endereco
 (pk_cep, pk_numero, complemento)
 VALUES
@@ -146,6 +152,8 @@ VALUES
 -- ============================================================
 -- 5. PESSOA_ENDERECO
 -- ============================================================
+
+select count(*) from tb_pessoa_endereco;
 
 INSERT INTO tb_pessoa_endereco
 (pk_fk_cpf, pk_fk_cep, pk_fk_numero)
@@ -185,6 +193,8 @@ VALUES
 -- 6. FORMACAO
 -- ============================================================
 
+select count(*) from tb_formacao;
+
 INSERT INTO tb_formacao
 (nome_formacao)
 VALUES
@@ -203,6 +213,8 @@ VALUES
 -- 7. DEPARTAMENTO
 -- ============================================================
 
+select count(*) from tb_departamento;
+
 INSERT INTO tb_departamento
 (pk_id_departamento, departamento)
 VALUES
@@ -218,6 +230,8 @@ VALUES
 -- ============================================================
 -- 8. CARGO
 -- ============================================================
+
+select count(*) from tb_cargo;
 
 INSERT INTO tb_cargo
 (nome_cargo)
@@ -235,6 +249,8 @@ VALUES
 -- 9. CARGO_DEPARTAMENTO
 -- ============================================================
 
+select count(*) from tb_cargo_departamento;
+
 INSERT INTO tb_cargo_departamento
 (pk_fk_id_cargo, pk_fk_id_departamento)
 VALUES
@@ -250,6 +266,8 @@ VALUES
 -- ============================================================
 -- 10. FUNCIONARIO
 -- ============================================================
+
+select count(*) from tb_funcionario;
 
 INSERT INTO tb_funcionario
 (pk_n_contratacao, fk_cpf, status_funcionario, dt_admissao, dt_desligamento)
@@ -268,11 +286,11 @@ VALUES
 (1012, '29292929292', 'Ativado', '2023-10-02', NULL),
 (1013, '30303030303', 'Desativado', '2020-02-01', '2025-02-15');
 
-select count(*) from tb_funcionario;
-
 -- ============================================================
 -- 11. FUNC_CARGO
 -- ============================================================
+
+select count(*) from tb_func_cargo;
 
 INSERT INTO tb_func_cargo
 (pk_fk_n_contratacao, pk_fk_id_cargo, pk_fk_id_departamento, pk_data_inicio, data_fim)
@@ -295,6 +313,8 @@ VALUES
 -- 12. DOCENTE_DETALHES
 -- ============================================================
 
+select count(*) from tb_docente_detalhes;
+
 INSERT INTO tb_docente_detalhes
 (pk_fk_n_contratacao, categoria_docente, fk_id_formacao)
 VALUES
@@ -306,6 +326,8 @@ VALUES
 -- ============================================================
 -- 13. FERIAS
 -- ============================================================
+
+select count(*) from tb_ferias;
 
 INSERT INTO tb_ferias
 (fk_n_contratacao, dias_ferias, data_inicio, data_fim, status_ferias)
@@ -325,6 +347,8 @@ VALUES
 -- ============================================================
 -- 14. PONTO
 -- ============================================================
+
+select count(*) from tb_ponto;
 
 INSERT INTO tb_ponto
 (fk_n_contratacao, `data`, hora_entrada, hora_saida)
@@ -354,11 +378,11 @@ VALUES
 (1009, '2025-05-03', '18:00:00', '22:00:00'),
 (1011, '2025-05-03', '07:30:00', '16:30:00');
 
-select count(*) from tb_ponto;
-
 -- ============================================================
 -- 15. FOLHA_PAGAMENTO
 -- ============================================================
+
+select count(*) from tb_folha_pagamento;
 
 INSERT INTO tb_folha_pagamento
 (pk_id_folha, fk_n_contratacao, salario_base, data_pagamento)
@@ -386,6 +410,8 @@ VALUES
 -- 16. HISTORICO_PAGAMENTO
 -- ============================================================
 
+select count(*) from tb_historico_pagamento;
+
 INSERT INTO tb_historico_pagamento
 (fk_n_contratacao, salario_atual, data_alteracao)
 VALUES
@@ -407,6 +433,8 @@ VALUES
 -- ============================================================
 -- 17. PROVENTO
 -- ============================================================
+
+select count(*) from tb_provento;
 
 INSERT INTO tb_provento
 (fk_id_folha, tipo, valor)
@@ -433,6 +461,8 @@ VALUES
 -- 18. DESCONTO
 -- ============================================================
 
+select count(*) from tb_desconto;
+
 INSERT INTO tb_desconto
 (fk_id_folha, tipo, valor)
 VALUES
@@ -458,6 +488,8 @@ VALUES
 -- 19. AFASTAMENTO
 -- ============================================================
 
+select count(*) from tb_afastamento;
+
 INSERT INTO tb_afastamento
 (fk_n_contratacao, motivo, status, data_inicio, data_fim)
 VALUES
@@ -472,6 +504,8 @@ VALUES
 -- ============================================================
 -- 20. TREINAMENTO
 -- ============================================================
+
+select count(*) from tb_treinamento;
 
 INSERT INTO tb_treinamento
 (fk_n_contratacao, tipo_treinamento, carga_horaria, data_inicio, data_conclusao)
@@ -491,8 +525,10 @@ VALUES
 -- 21. UNIDADE
 -- ============================================================
 
+select count(*) from tb_unidade;
+
 INSERT INTO tb_unidade
-(pk_id_unidade, nome, logradouro, num_logradouro, complemento)
+(pk_id_unidade, nome_unidade, logradouro, num_logradouro, complemento)
 VALUES
 (1, 'Infinity Centro', 'Rua Principal', '100', '1 andar'),
 (2, 'Infinity Norte', 'Avenida Norte', '200', NULL),
@@ -503,6 +539,8 @@ VALUES
 -- ============================================================
 -- 22. CURSO
 -- ============================================================
+
+select count(*) from tb_curso;
 
 INSERT INTO tb_curso
 (pk_id_curso, nome_curso, duracao_meses, idade_min, idade_max)
@@ -518,6 +556,8 @@ VALUES
 -- ============================================================
 -- 23. ALUNO
 -- ============================================================
+
+select count(*) from tb_aluno;
 
 INSERT INTO tb_aluno
 (pk_ra, fk_cpf)
@@ -538,11 +578,11 @@ VALUES
 ('RA0014', '26262626262'),
 ('RA0015', '27272727272');
 
-select count(*) from tb_aluno;
-
 -- ============================================================
 -- 24. DISCIPLINA
 -- ============================================================
+
+select count(*) from tb_disciplina;
 
 INSERT INTO tb_disciplina
 (pk_fk_id_curso, pk_id_disciplina, disciplina)
@@ -571,6 +611,8 @@ VALUES
 -- 25. TURMA
 -- ============================================================
 
+select count(*) from tb_turma;
+
 INSERT INTO tb_turma
 (pk_id_turma, fk_n_contratacao, fk_id_curso, fk_id_disciplina, fk_id_unidade, data_inicio, turno)
 VALUES
@@ -594,39 +636,42 @@ VALUES
 -- 26. MATRICULA
 -- ============================================================
 
-INSERT INTO tb_matricula
-(pk_fk_ra, pk_fk_id_turma, data_matricula, status_matricula, nota_final, total_faltas)
-VALUES
-('RA0001', 1, '2025-01-20', 'Cursando', NULL, 0),
-('RA0002', 1, '2025-01-22', 'Cursando', NULL, 2),
-('RA0003', 2, '2025-02-15', 'Cursando', NULL, 1),
-('RA0004', 3, '2025-01-25', 'Aprovado', 8.50, 4),
-('RA0005', 4, '2025-02-28', 'Cursando', NULL, 0),
+select count(*) from tb_matricula;
 
-('RA0001', 2, '2025-02-20', 'Aprovado', 9.20, 2),
-('RA0002', 2, '2025-02-22', 'Reprovado', 4.50, 18),
-('RA0003', 6, '2025-04-01', 'Cursando', NULL, 5),
-('RA0004', 6, '2025-04-02', 'Trancado', 6.00, 10),
-('RA0005', 7, '2025-04-20', 'Cursando', NULL, 3),
-('RA0006', 6, '2025-04-01', 'Cursando', NULL, 1),
-('RA0007', 7, '2025-04-22', 'Evadido', 3.00, 20),
-('RA0008', 8, '2025-05-10', 'Aprovado', 8.80, 4),
-('RA0009', 9, '2025-05-25', 'Cursando', NULL, 0),
-('RA0010', 9, '2025-05-26', 'Reprovado', 5.20, 16),
-('RA0011', 10, '2025-06-10', 'Cursando', NULL, 2),
-('RA0012', 10, '2025-06-11', 'Aprovado', 9.50, 1),
-('RA0013', 11, '2025-07-20', 'Cursando', NULL, 0),
-('RA0014', 12, '2025-07-25', 'Cursando', NULL, 6),
-('RA0015', 13, '2025-08-10', 'Trancado', 6.50, 12),
-('RA0001', 11, '2025-07-22', 'Cursando', NULL, 4),
-('RA0002', 12, '2025-07-28', 'Evadido', 2.80, 22),
-('RA0003', 13, '2025-08-15', 'Cursando', NULL, 3),
-('RA0004', 14, '2025-08-20', 'Aprovado', 8.00, 5),
-('RA0005', 15, '2025-09-01', 'Cursando', NULL, 2);
+INSERT INTO tb_matricula 
+(pk_fk_ra, pk_fk_id_turma, data_matricula, status_matricula, nota1, nota2, nota3, nota4, total_faltas) 
+VALUES
+('RA0001', 1, '2025-01-20', 'Cursando', 7.50, NULL, NULL, NULL, 0),
+('RA0002', 1, '2025-01-22', 'Cursando', 6.00, 5.50, NULL, NULL, 2),
+('RA0003', 2, '2025-02-15', 'Cursando', 8.00, NULL, NULL, NULL, 1),
+('RA0005', 4, '2025-02-28', 'Cursando', 9.00, 8.50, 7.00, NULL, 0),
+('RA0003', 6, '2025-04-01', 'Cursando', 6.50, NULL, NULL, NULL, 5),
+('RA0005', 7, '2025-04-20', 'Cursando', 7.00, 7.00, NULL, NULL, 3),
+('RA0006', 6, '2025-04-01', 'Cursando', 8.20, 7.80, NULL, NULL, 1),
+('RA0009', 9, '2025-05-25', 'Cursando', 10.0, NULL, NULL, NULL, 0),
+('RA0011', 10, '2025-06-10', 'Cursando', 5.50, 6.00, NULL, NULL, 2),
+('RA0013', 11, '2025-07-20', 'Cursando', 9.50, NULL, NULL, NULL, 0),
+('RA0014', 12, '2025-07-25', 'Cursando', 4.00, 5.00, NULL, NULL, 6),
+('RA0001', 11, '2025-07-22', 'Cursando', 7.00, NULL, NULL, NULL, 4),
+('RA0003', 13, '2025-08-15', 'Cursando', 8.50, 9.00, 8.00, NULL, 3),
+('RA0005', 15, '2025-09-01', 'Cursando', 6.00, NULL, NULL, NULL, 2),
+('RA0004', 3, '2025-01-25', 'Aprovado', 8.00, 9.00, 8.50, 8.50, 4),
+('RA0001', 2, '2025-02-20', 'Aprovado', 9.00, 9.50, 9.00, 9.30, 2),
+('RA0002', 2, '2025-02-22', 'Reprovado', 4.00, 5.00, 4.50, 4.50, 18),
+('RA0008', 8, '2025-05-10', 'Aprovado', 8.50, 9.00, 8.70, 9.00, 4),
+('RA0010', 9, '2025-05-26', 'Reprovado', 5.00, 5.50, 5.00, 5.30, 16),
+('RA0012', 10, '2025-06-11', 'Aprovado', 9.50, 10.0, 9.00, 9.50, 1),
+('RA0004', 14, '2025-08-20', 'Aprovado', 8.00, 8.00, 8.00, 8.00, 5),
+('RA0004', 6, '2025-04-02', 'Trancado', 6.00, 6.00, NULL, NULL, 10),
+('RA0015', 13, '2025-08-10', 'Trancado', 6.50, NULL, NULL, NULL, 12),
+('RA0007', 7, '2025-04-22', 'Evadido', 3.00, NULL, NULL, NULL, 20),
+('RA0002', 12, '2025-07-28', 'Evadido', 2.80, 2.00, NULL, NULL, 22);
 
 -- ============================================================
 -- 27. GRADE_HORARIA
 -- ============================================================
+
+select count(*) from tb_grade_horaria;
 
 INSERT INTO tb_grade_horaria
 (pk_fk_id_turma, pk_dia_semana, pk_hora_inicio, hora_fim)
@@ -661,6 +706,8 @@ VALUES
 -- 28. CONTRATO
 -- ============================================================
 
+select count(*) from tb_contrato;
+
 INSERT INTO tb_contrato
 (pk_registro_nrcontrato, fk_ra, fk_id_turma, data_inicio, data_fim, status_contrato)
 VALUES
@@ -688,6 +735,8 @@ VALUES
 -- ============================================================
 -- 29. MENSALIDADE
 -- ============================================================
+
+select count(*) from tb_mensalidade;
 
 INSERT INTO tb_mensalidade
 (pk_nsu, fk_registro_nrcontrato, data_emissao, data_vencimento, valor, status_mensalidade)
@@ -731,6 +780,8 @@ VALUES
 -- 30. INADIMPLENCIA
 -- ============================================================
 
+select count(*) from tb_inadimplencia;
+
 INSERT INTO tb_inadimplencia
 (fk_nsu, data_registro, multa, juros)
 VALUES
@@ -746,6 +797,8 @@ VALUES
 -- ============================================================
 -- 31. PRODUTO
 -- ============================================================
+
+select count(*) from tb_produto;
 
 INSERT INTO tb_produto
 (pk_id_produto, nome_produto)
@@ -770,19 +823,52 @@ VALUES
 -- 32. FORNECEDOR
 -- ============================================================
 
-INSERT INTO tb_fornecedor
-(pk_cnpj, razao_social, nome_fantasia, email, telefone)
+select count(*) from tb_fornecedor;
+
+INSERT INTO tb_fornecedor (pk_cnpj, razao_social, nome_fantasia)
 VALUES
-('11111111000111', 'Tech Solucoes LTDA', 'Tech Solucoes', 'contato@techsolucoes.com', '11999990000'),
-('22222222000122', 'Moveis Escola LTDA', 'Moveis Escola', 'vendas@moveisescola.com', '11988880000'),
-('33333333000133', 'Info Brasil LTDA', 'Info Brasil', 'atendimento@infobrasil.com', '11977770000'),
-('44444444000144', 'Software Prime LTDA', 'Software Prime', 'financeiro@softwareprime.com', '11966660000'),
-('55555555000155', 'Escritorio Total LTDA', 'Escritorio Total', 'vendas@escritoriototal.com', '11955550000'),
-('66666666000166', 'Grafica Rapida LTDA', 'Grafica Rapida', 'contato@graficarapida.com', '11944440000');
+('11111111000111', 'Tech Solucoes LTDA', 'Tech Solucoes'),
+('22222222000122', 'Moveis Escola LTDA', 'Moveis Escola'),
+('33333333000133', 'Info Brasil LTDA', 'Info Brasil'),
+('44444444000144', 'Software Prime LTDA', 'Software Prime'),
+('55555555000155', 'Escritorio Total LTDA', 'Escritorio Total'),
+('66666666000166', 'Grafica Rapida LTDA', 'Grafica Rapida');
 
 -- ============================================================
--- 33. COMPRA
+-- 33. EMAIL_FORNECEDOR
 -- ============================================================
+
+select count(*) from tb_email_fornecedor;
+
+INSERT INTO tb_email_fornecedor (pk_email, fk_cnpj)
+VALUES
+('contato@techsolucoes.com', '11111111000111'),
+('vendas@moveisescola.com', '22222222000122'),
+('atendimento@infobrasil.com', '33333333000133'),
+('financeiro@softwareprime.com', '44444444000144'),
+('vendas@escritoriototal.com', '55555555000155'),
+('contato@graficarapida.com', '66666666000166');
+
+-- ============================================================
+-- 34. TELEFONE_FORNECEDOR
+-- ============================================================
+
+select count(*) from tb_telefone_fornecedor;
+
+INSERT INTO tb_telefone_fornecedor (pk_ddd, pk_numero, fk_cnpj)
+VALUES
+('11', '999990000', '11111111000111'),
+('11', '988880000', '22222222000122'),
+('11', '977770000', '33333333000133'),
+('11', '966660000', '44444444000144'),
+('11', '955550000', '55555555000155'),
+('11', '944440000', '66666666000166');
+
+-- ============================================================
+-- 35. COMPRA
+-- ============================================================
+
+select count(*) from tb_compra;
 
 INSERT INTO tb_compra
 (pk_nfe, fk_cnpj)
@@ -795,8 +881,10 @@ VALUES
 ('66666666666666666666666666666666666666666666', '66666666000166');
 
 -- ============================================================
--- 34. SERVICO
+-- 36. SERVICO
 -- ============================================================
+
+select count(*) from tb_servico;
 
 INSERT INTO tb_servico
 (pk_id_servico, desc_servico, valor_servico, fk_cpf, data_hora)
@@ -812,8 +900,10 @@ VALUES
 (9, 'Palestra de carreira', 1600.00, '34343434343', '2025-08-05 19:00:00');
 
 -- ============================================================
--- 35. CONTA_PAGAR
+-- 37. CONTA_PAGAR
 -- ============================================================
+
+select count(*) from tb_conta_pagar;
 
 INSERT INTO tb_conta_pagar
 (fk_nfe, fk_id_servico, data_pagamento, data_vencimento)
@@ -833,11 +923,11 @@ VALUES
 (NULL, 8, '2025-07-18', '2025-07-28'),
 (NULL, 9, '2025-08-05', '2025-08-15');
 
-select count(*) from tb_conta_pagar;
+-- ============================================================
+-- 38. ITEM_COMPRA
+-- ============================================================
 
--- ============================================================
--- 36. ITEM_COMPRA
--- ============================================================
+select count(*) from tb_item_compra;
 
 INSERT INTO tb_item_compra
 (pk_fk_nfe, pk_fk_id_produto, valor_unitario, qtd)
@@ -859,8 +949,10 @@ VALUES
 ('66666666666666666666666666666666666666666666', 15, 120.00, 50);
 
 -- ============================================================
--- 37. CONTA_RECEBER
+-- 39. CONTA_RECEBER
 -- ============================================================
+
+select count(*) from tb_conta_receber;
 
 INSERT INTO tb_conta_receber
 (pk_id_conta_receber, fk_nsu, data_prevista, data_recebimento)
@@ -901,8 +993,10 @@ VALUES
 (31, 31, '2025-08-10', NULL);
 
 -- ============================================================
--- 38. PAGAMENTO
+-- 40. PAGAMENTO
 -- ============================================================
+
+select count(*) from tb_pagamento;
 
 INSERT INTO tb_pagamento
 (fk_id_conta_receber, valor_pago, data_pagamento, forma_pagamento)
