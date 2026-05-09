@@ -119,7 +119,6 @@ CREATE TABLE `tb_funcionario` (
   -- DECLARA FK
   FOREIGN KEY (fk_cpf)
   REFERENCES tb_pessoa(pk_cpf)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_funcionario_cpf (fk_cpf),
   -- GARANTE QUE, SE OCORRER DESLIGAMENTO, ELE É DEPOIS DA DATA DE ADMISSÃO, SE NÃO, PERMANECER NULO
   CHECK (dt_desligamento IS NULL OR dt_desligamento >= dt_admissao),
   
@@ -178,7 +177,6 @@ CREATE TABLE `tb_ferias` (
   -- DECLARA A FK ASSOCIANDO AS FÉRIAS A UM FUNCIONÁRIO
   FOREIGN KEY (fk_n_contratacao)
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_ferias_n_contratacao (fk_n_contratacao),
   -- CHECA SE A DATA DE FIM É MAIOR QUE A DE INÍCIO
   CHECK (data_fim >= data_inicio),
   
@@ -197,7 +195,6 @@ CREATE TABLE `tb_ponto` (
   -- DECLARA A FK DO PONTO AO FUNCIONÁRIO RELACIONADO
   FOREIGN KEY (fk_n_contratacao)
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_ponto_n_contratacao (fk_n_contratacao),
   -- CHECA SE O HORARIO SE SAIDA FOI GERADO, SE SIM, O PONTO DEVE SER DEPOIS DA ENTRADA
   CHECK (
   hora_saida IS NULL 
@@ -216,7 +213,6 @@ CREATE TABLE `tb_folha_pagamento` (
   -- FKs QUE INDICAM O FUNCIONÁRIO DA FOLHA
   FOREIGN KEY (fk_n_contratacao)
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_folha_pagamento_n_contratacao (fk_n_contratacao),
   -- CHECA QUE NENHUM SALÁRIO É MENOR QUE ZERO
   CHECK (salario_base >= 0),
   
@@ -233,7 +229,6 @@ CREATE TABLE `tb_historico_pagamento` (
   -- INDICA O FUNCIONÁRIO CUJO SALÁRIO FOI ALTERADO
   FOREIGN KEY (fk_n_contratacao)
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_historico_pagamento_n_contratacao (fk_n_contratacao),
   -- CHECA SE O SALÁRIO ATUAL É MAIOR OU IGUAL A ZERO. AFINAL, NÃO DEVE SER MENOR.
   CHECK (salario_atual >= 0),
   
@@ -249,7 +244,6 @@ CREATE TABLE `tb_provento` (
   -- INDICA A QUAL FOLHA ESSE PROVENTO PERTENCE
   FOREIGN KEY (fk_id_folha)
   REFERENCES tb_folha_pagamento(pk_id_folha)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_provanto_id_folha (fk_id_folha),
   -- GARANTE QUE O VALOR DO PROVENTO NÃO SEJA NEGATIVO
   CHECK (valor >= 0),
   
@@ -265,7 +259,6 @@ CREATE TABLE `tb_desconto` (
   -- INDICA A QUAL FOLHA ESSE DESCONTO PERTENCE
   FOREIGN KEY (fk_id_folha)
   REFERENCES tb_folha_pagamento(pk_id_folha)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_desconto_id_folha (fk_id_folha),
   -- GARANTE QUE O VALOR DO DESCONTO NÃO SEJA NEGATIVO
   CHECK (valor >= 0),
   
@@ -283,7 +276,6 @@ CREATE TABLE `tb_afastamento` (
   -- INDICA AS FKs QUE ASSOCIAM OS AFASTAMENTOS AO FUNCIONÁRIO
   FOREIGN KEY (fk_n_contratacao)
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_afastamento_n_contratacao (fk_n_contratacao),
   -- CONFERE QUE A DATA DE FIM É OU VAZIO, OU MAIOR QUE A DE INÍCIO
   CHECK (
     data_fim IS NULL 
@@ -303,7 +295,6 @@ CREATE TABLE `tb_treinamento` (
   -- FKs QUE INDICAM O FUNCIONÁRIO RECEBENDO O TREINAMENTO
   FOREIGN KEY (fk_n_contratacao)
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idk_treinamento_n_contratacao (fk_n_contratacao),
   -- GARANTIA DE QUE A CARGA HORÁRIO É VÁLIDA, SENDO MAIOR QUE 0
   CHECK (carga_horaria > 0),
   
@@ -348,8 +339,7 @@ CREATE TABLE `tb_aluno` (
   
   -- FK QUE LIGA O ALUNO AO SEU VÍNCULO ACADÊMICO
   FOREIGN KEY (fk_cpf)
-  REFERENCES tb_pessoa(pk_cpf)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idk_aluno_cpf (fk_cpf)
+  REFERENCES tb_pessoa(pk_cpf)ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE `tb_disciplina` (
@@ -381,10 +371,6 @@ CREATE TABLE `tb_turma` (
   REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (fk_id_unidade)
   REFERENCES tb_unidade(pk_id_unidade)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idk_turma_n_contratacao (fk_n_contratacao), 
-  INDEX idk_turma_id_curso (fk_id_curso), 
-  INDEX idk_turma_id_disciplina (fk_id_disciplina), 
-  INDEX idk_turma_id_unidade (fk_id_unidade), 
   
   UNIQUE (fk_id_curso, fk_id_unidade, data_inicio)
 );
@@ -450,8 +436,6 @@ CREATE TABLE `tb_contrato` (
   REFERENCES tb_aluno(`pk_ra`)ON DELETE RESTRICT ON UPDATE CASCADE,
   FOREIGN KEY (`fk_id_turma`)
   REFERENCES tb_turma(`pk_id_turma`)ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_contrato_ra (fk_ra),
-  INDEX idx_contrato_id_turma (fk_id_turma),
   -- GARANTE QUE A DATA DE FIM NÃO É MENOR QUE A DE INÍCIO
   CHECK (`data_fim` >= `data_inicio`),
   
@@ -469,7 +453,6 @@ CREATE TABLE `tb_mensalidade` (
   -- CHAVE ESTRANGEIRA QUE LIGA A MENSALIDADE AO REGISTRO DE CONTRATO
   FOREIGN KEY (`fk_registro_nrcontrato`)
   REFERENCES tb_contrato(`pk_registro_nrcontrato`)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_mensalidade_registro_nrcontrato (fk_registro_nrcontrato),
   -- RESTRIÇÃO QUE GARANTE QUE A DATA DE VENCIMENTO É DEPOIS DA EMISSÃO
   CHECK (`data_vencimento` >= `data_emissao`),
   -- GARANTTE QUE O VALOR DE UMA MENSALIDADE É MAIOR QUE 0
@@ -487,8 +470,7 @@ CREATE TABLE `tb_inadimplencia` (
   
   -- FK QUE LIGA A INADIMPLENCIA À MENSALIDADE
   FOREIGN KEY (`fk_nsu`)
-  REFERENCES tb_mensalidade(`pk_nsu`)ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_inadimplencia_nsu (fk_nsu)
+  REFERENCES tb_mensalidade(`pk_nsu`)ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE `tb_produto` (
@@ -531,8 +513,7 @@ CREATE TABLE `tb_compra` (
   
   -- CHAVE ESTRANGEIRA QUE CONECTA UMA COMPRA À UMA EMPRESA
   FOREIGN KEY (`fk_cnpj`)
-  REFERENCES tb_fornecedor(`pk_cnpj`)ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_compra_cnpj (fk_cnpj)
+  REFERENCES tb_fornecedor(`pk_cnpj`)ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE `tb_servico` (
@@ -545,7 +526,7 @@ CREATE TABLE `tb_servico` (
   -- LIGA O SERVIÇO A UM PRESTADOR
   FOREIGN KEY (fk_cpf)
   REFERENCES tb_pessoa(pk_cpf)ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_servico_cpf (fk_cpf),
+ 
   -- GARANTE QUE O VALOR DO SERVIÇO NÃO É NEGATIVO
   CHECK (valor_servico >= 0),
   
@@ -568,9 +549,6 @@ CREATE TABLE `tb_conta_pagar` (
   REFERENCES tb_servico(`pk_id_servico`)
   ON DELETE RESTRICT
   ON UPDATE RESTRICT,
-  
-  INDEX idx_conta_pagar_nfe (fk_nfe),
-  INDEX idx_conta_id_servico (fk_id_servico),
   
   CHECK (
     (fk_nfe IS NOT NULL AND fk_id_servico IS NULL)
@@ -605,8 +583,7 @@ CREATE TABLE `tb_conta_receber` (
   
   -- FK QUE FAZ TB_CONTA_RECEBER SE LIGAR COM SUA RESPECTIVA MENSALIDADE
   FOREIGN KEY (`fk_nsu`)
-  REFERENCES tb_mensalidade(`pk_nsu`)ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_conta_receber_nsu (fk_nsu)
+  REFERENCES tb_mensalidade(`pk_nsu`)ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE `tb_pagamento` (
@@ -619,7 +596,6 @@ CREATE TABLE `tb_pagamento` (
   -- CHAVE ESTRANGEIRA QUE LIGA O PAGAMENTO COM A CONTA A RECEBER
   FOREIGN KEY (`fk_id_conta_receber`)
   REFERENCES tb_conta_receber(`pk_id_conta_receber`)ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_pagamento_id_contra_receber (fk_id_conta_receber),
  
   CHECK (`valor_pago` > 0),
   UNIQUE (fk_id_conta_receber, data_pagamento)
