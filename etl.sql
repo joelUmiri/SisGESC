@@ -57,21 +57,24 @@ SELECT
     f.status_funcionario,
     c.nome_cargo,
     d.departamento,
-    -- Buscamos a formação na tabela de detalhes. Se não for professor, fica 'N/A'
-    IFNULL(tf.nome_formacao, 'N/A') 
+    IFNULL(
+        (SELECT GROUP_CONCAT(tf.nome_formacao SEPARATOR ', ') 
+         FROM tb_funcionario_formacao tff 
+         JOIN tb_formacao tf ON tff.fk_id_formacao = tf.pk_id_formacao 
+         WHERE tff.fk_n_contratacao = f.pk_n_contratacao), 
+    'N/A') AS formacao 
 FROM tb_pessoa p
 JOIN tb_funcionario f ON p.pk_cpf = f.fk_cpf
 JOIN tb_func_cargo fc ON f.pk_n_contratacao = fc.pk_fk_n_contratacao
 JOIN tb_cargo c ON fc.pk_fk_id_cargo = c.pk_id_cargo
 JOIN tb_departamento d ON fc.pk_fk_id_departamento = d.pk_id_departamento
--- Entra na tabela exclusiva de professores usando a FK de contratação
-LEFT JOIN tb_docente_detalhes dd ON f.pk_n_contratacao = dd.pk_fk_n_contratacao
--- Pega o nome da formação vinculada ao detalhe do docente
-LEFT JOIN tb_formacao tf ON dd.fk_id_formacao = tf.pk_id_formacao
 WHERE fc.data_fim IS NULL
 ON DUPLICATE KEY UPDATE
     nome_completo = VALUES(nome_completo),
-    status_funcionario = VALUES(status_funcionario);
+    status_funcionario = VALUES(status_funcionario),
+    cargo = VALUES(cargo),
+    departamento = VALUES(departamento),
+    formacao = VALUES(formacao);
 
 -- ============================================================
 -- 3. UNIDADE
@@ -194,8 +197,10 @@ ON DUPLICATE KEY UPDATE
     razao_social = VALUES(razao_social),
     nome_fantasia = VALUES(nome_fantasia);
 
--- Conferindo o bgl
-SELECT * FROM dim_fornecedor;
+-- ============================================================
+-- 7. PRODUTO
+-- ============================================================
+select count(*) from dim_produto;
 
 -- Inserção do dummy produto (Produto Zero)
 SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
@@ -213,8 +218,10 @@ FROM tb_produto
 ON DUPLICATE KEY UPDATE
     nome_produto = VALUES(nome_produto);
 
--- Conferindo o resultado
-SELECT * FROM dim_produto;
+-- ============================================================
+-- 8. STATUS
+-- ============================================================
+select count(*) from dim_status;
 
 INSERT INTO dim_status (sk_status, status_nome) VALUES 
 (1, 'Aprovado'),
@@ -226,7 +233,10 @@ INSERT INTO dim_status (sk_status, status_nome) VALUES
 ON DUPLICATE KEY UPDATE 
 status_nome = VALUES(status_nome);
 
-select * from dim_status;
+-- ============================================================
+-- 9. NATUREZA FINANCEIRA
+-- ============================================================
+select count(*) from dim_natureza_financeira;
 
 INSERT INTO dim_natureza_financeira (codigo_operacional, nome_natureza, tipo_movimentacao) VALUES
 (1, 'Mensalidade', 'ENTRADA'),
@@ -236,7 +246,10 @@ on duplicate key update
 codigo_operacional=values(codigo_operacional),
 tipo_movimentacao=values(tipo_movimentacao);
 
-select * from dim_status;
+-- ============================================================
+-- 10. NATUREZA FINANCEIRA
+-- ============================================================
+select count(*) from dim_tempo;
 
 INSERT INTO dim_tempo (
     sk_tempo,
@@ -1393,9 +1406,11 @@ UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Proclamação da Repúbli
 UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia da Consciência Negra' WHERE sk_tempo = 20271120;
 UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Natal' WHERE sk_tempo = 20271225;
 
-select * from dim_tempo where data_completa between '2025-01-01' and '2025-12-31';
-select * from dim_tempo where data_completa between '2026-01-01' and '2026-12-31';
-select * from dim_tempo where data_completa between '2027-01-01' and '2027-12-31';
+-- ============================================================
+-- 11. FATO_ACADEMICO
+-- ============================================================
+
+select count(*) from fato_academico;
 
 INSERT INTO fato_academico (
     sk_aluno, sk_turma, sk_unidade, sk_tempo, sk_status, 
@@ -1465,36 +1480,11 @@ JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
 JOIN dim_status ds ON ds.status_nome = m.status_matricula
 JOIN dim_tempo dtempo ON dtempo.data_completa = m.data_matricula
 WHERE m.nota4 IS NOT NULL;
-
-SELECT
-    da.nome_completo AS aluno,
-    dt.nome_curso,
-    dt.nome_disciplina,
-    dt.turno,
-    du.nome_unidade,
-    dtempo.data_completa AS data_matricula,
-    fa.num_trimestre AS trimestre_da_nota, 
-    dtempo.ano,
-    ds.status_nome AS status_atual,
-    fa.nota,
-    fa.total_faltas,
-    fa.qtd_matricula
-FROM fato_academico fa
-JOIN dim_aluno da
-    ON fa.sk_aluno = da.sk_aluno
-JOIN dim_turma dt
-    ON fa.sk_turma = dt.sk_turma
-JOIN dim_unidade du
-    ON fa.sk_unidade = du.sk_unidade
-JOIN dim_tempo dtempo
-    ON fa.sk_tempo = dtempo.sk_tempo
-JOIN dim_status ds
-    ON fa.sk_status = ds.sk_status
-ORDER BY
-    da.nome_completo, 
-    fa.num_trimestre;
     
--- INSERIR FATO_FINANCEIRO---------------------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------
+-- INSERIR FATO_FINANCEIRO
+-- --------------------------------------------------------------------------
+
 INSERT INTO fato_financeiro (
     sk_tempo, sk_unidade, sk_forma_pagamento, sk_natureza, 
     sk_entidade_id, num_documento, valor_total, quantidade
@@ -1592,53 +1582,174 @@ GROUP BY
     df.sk_fornecedor,
     c.pk_nfe;
 
-SELECT 
-    dt.data_completa AS data_movimentacao,
-    dn.nome_natureza AS categoria,
-    dn.tipo_movimentacao,
-    du.nome_unidade AS unidade,
-    dfp.forma_pagamento,
-    -- Lógica para identificar a entidade (Aluno ou Fornecedor)
-    CASE 
-        WHEN dn.codigo_operacional IN (1, 2) THEN da.nome_completo
-        WHEN dn.codigo_operacional = 3 THEN dfor.nome_fantasia
-        ELSE 'Não identificado'
-    END AS entidade_nome,
-    
-    ff.valor_total,
-    ff.quantidade
-FROM fato_financeiro ff
-JOIN dim_tempo dt 
-    ON ff.sk_tempo = dt.sk_tempo
-JOIN dim_unidade du 
-    ON ff.sk_unidade = du.sk_unidade
-JOIN dim_natureza_financeira dn 
-    ON ff.sk_natureza = dn.sk_natureza
-LEFT JOIN dim_forma_pagamento dfp 
-    ON ff.sk_forma_pagamento = dfp.sk_forma_pagamento
--- Joins condicionais para buscar o nome correto
-LEFT JOIN dim_aluno da 
-    ON ff.sk_entidade_id = da.sk_aluno AND dn.codigo_operacional IN (1, 2)
-LEFT JOIN dim_fornecedor dfor 
-    ON ff.sk_entidade_id = dfor.sk_fornecedor AND dn.codigo_operacional = 3
-ORDER BY 
-    dt.data_completa DESC, 
-    dn.tipo_movimentacao ASC;
-    
+-- --------------------------------------------------------------------------
+-- INSERIR FATO_RH
+-- --------------------------------------------------------------------------
+INSERT INTO fato_rh (
+    sk_funcionario,
+    sk_unidade,
+    sk_tempo,
+    salario_base,
+    total_proventos,
+    total_descontos,
+    salario_liquido,
+    horas_trabalhadas,
+    horas_extra,
+    qtd_faltas_ponto,
+    flag_ferias,
+    flag_afastamento,
+    qtd_treinamentos,
+    horas_treinamento
+)
 SELECT
-    c.pk_nfe,
-    p.nome_produto,
-    ic.qtd,
-    ic.valor_unitario,
-    (ic.qtd * ic.valor_unitario) AS subtotal
-FROM tb_item_compra ic
-JOIN tb_compra c
-    ON c.pk_nfe = ic.pk_fk_nfe
-JOIN tb_produto p
-    ON p.pk_id_produto = ic.pk_fk_id_produto;
-    
-SELECT SUM(valor_pago) as total_oltp_mensalidades 
-FROM tb_pagamento;
-SELECT SUM(valor_total) as total_olap_mensalidades 
-FROM fato_financeiro 
-WHERE sk_natureza = 1;
+    df.sk_funcionario,
+    du.sk_unidade,
+    dt.sk_tempo,
+    -- Financeiro
+    COALESCE(folha.salario_base, 0) AS salario_base,
+    (
+        COALESCE(folha.salario_base, 0)
+        + COALESCE(prov.total_prov, 0)
+    ) AS total_proventos,
+
+    COALESCE(desc_tab.total_desc, 0) AS total_descontos,
+    (
+        COALESCE(folha.salario_base, 0)
+        + COALESCE(prov.total_prov, 0)
+        - COALESCE(desc_tab.total_desc, 0)
+    ) AS salario_liquido,
+    -- Frequência
+    COALESCE(ponto.horas_totais, 0) AS horas_trabalhadas,
+    COALESCE(ponto.horas_extras, 0) AS horas_extra,
+    COALESCE(ponto.faltas, 0) AS qtd_faltas_ponto,
+    -- Status
+    COALESCE(fer.flag_ferias, 0) AS flag_ferias,
+    COALESCE(afast.flag_afastamento, 0) AS flag_afastamento,
+    -- Desenvolvimento
+    COALESCE(treinos.qtd, 0) AS qtd_treinamentos,
+    COALESCE(treinos.horas, 0) AS horas_treinamento
+FROM dim_funcionario df
+JOIN tb_funcionario f
+    ON df.cpf = f.fk_cpf
+JOIN dim_unidade du
+    ON du.sk_unidade = 1
+-- Um registro por mês
+JOIN dim_tempo dt
+    ON dt.dia = 1
+   AND dt.data_completa BETWEEN '2025-01-01' AND '2025-12-01'
+-- Folha do mês
+LEFT JOIN tb_folha_pagamento folha
+    ON folha.fk_n_contratacao = f.pk_n_contratacao
+   AND folha.data_pagamento >= dt.data_completa
+   AND folha.data_pagamento < DATE_ADD(dt.data_completa, INTERVAL 1 MONTH)
+-- Proventos consolidados
+LEFT JOIN (
+    SELECT
+        fk_id_folha,
+        SUM(valor) AS total_prov
+    FROM tb_provento
+    GROUP BY fk_id_folha
+) prov
+    ON prov.fk_id_folha = folha.pk_id_folha
+-- Descontos consolidados
+LEFT JOIN (
+    SELECT
+        fk_id_folha,
+        SUM(valor) AS total_desc
+    FROM tb_desconto
+    GROUP BY fk_id_folha
+) desc_tab
+    ON desc_tab.fk_id_folha = folha.pk_id_folha
+-- Pontos consolidados por mês
+LEFT JOIN (
+    SELECT
+        fk_n_contratacao,
+        DATE_FORMAT(data, '%Y-%m-01') AS mes_ref,
+        SUM(
+            TIMESTAMPDIFF(
+                HOUR,
+                hora_entrada,
+                hora_saida
+            )
+        ) AS horas_totais,
+        SUM(
+            CASE
+                WHEN TIMESTAMPDIFF(
+                    HOUR,
+                    hora_entrada,
+                    hora_saida
+                ) > 8
+                THEN TIMESTAMPDIFF(
+                    HOUR,
+                    hora_entrada,
+                    hora_saida
+                ) - 8
+                ELSE 0
+            END
+        ) AS horas_extras,
+        SUM(
+            CASE
+                WHEN hora_saida IS NULL
+                THEN 1
+                ELSE 0
+            END
+        ) AS faltas
+    FROM tb_ponto
+    GROUP BY
+        fk_n_contratacao,
+        DATE_FORMAT(data, '%Y-%m-01')
+) ponto
+    ON ponto.fk_n_contratacao = f.pk_n_contratacao
+   AND ponto.mes_ref = dt.data_completa
+-- Treinamentos consolidados por mês
+LEFT JOIN (
+    SELECT
+        fk_n_contratacao,
+        DATE_FORMAT(data_inicio, '%Y-%m-01') AS mes_ref,
+        COUNT(*) AS qtd,
+        SUM(carga_horaria) AS horas
+    FROM tb_treinamento
+    GROUP BY
+        fk_n_contratacao,
+        DATE_FORMAT(data_inicio, '%Y-%m-01')
+) treinos
+    ON treinos.fk_n_contratacao = f.pk_n_contratacao
+   AND treinos.mes_ref = dt.data_completa
+-- Férias por mês
+LEFT JOIN (
+    SELECT DISTINCT
+        tf.fk_n_contratacao,
+        dt2.data_completa AS mes_ref,
+        1 AS flag_ferias
+    FROM tb_ferias tf
+    JOIN dim_tempo dt2
+        ON dt2.dia = 1
+       AND dt2.data_completa BETWEEN '2025-01-01' AND '2025-12-01'
+    WHERE tf.data_inicio <= LAST_DAY(dt2.data_completa)
+      AND tf.data_fim >= dt2.data_completa
+) fer
+    ON fer.fk_n_contratacao = f.pk_n_contratacao
+   AND fer.mes_ref = dt.data_completa
+-- Afastamentos por mês
+LEFT JOIN (
+    SELECT DISTINCT
+        ta.fk_n_contratacao,
+        dt3.data_completa AS mes_ref,
+        1 AS flag_afastamento
+    FROM tb_afastamento ta
+    JOIN dim_tempo dt3
+        ON dt3.dia = 1
+       AND dt3.data_completa BETWEEN '2025-01-01' AND '2025-12-01'
+    WHERE ta.data_inicio <= LAST_DAY(dt3.data_completa)
+      AND (
+            ta.data_fim >= dt3.data_completa
+            OR ta.data_fim IS NULL
+          )
+) afast
+    ON afast.fk_n_contratacao = f.pk_n_contratacao
+   AND afast.mes_ref = dt.data_completa
+WHERE
+    (
+        f.dt_desligamento IS NULL
+        OR f.dt_desligamento >= dt.data_completa
+    );
