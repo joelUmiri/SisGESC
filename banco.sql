@@ -18,34 +18,17 @@ CREATE TABLE `tb_pessoa` (
 
 CREATE TABLE `tb_email` (
   `pk_email` varchar(40) PRIMARY KEY NOT NULL,
-  `fk_cpf` char(11) NOT NULL,
-  
-  -- FK QUE ASSOCIA O(S) EMAIL(S) À PESSOA
-  FOREIGN KEY (fk_cpf)
-  REFERENCES tb_pessoa(pk_cpf) ON DELETE CASCADE ON UPDATE CASCADE,
-  
   -- RESTRIÇÃO QUE CHECA SE O EMAIL ESTÁ NO MODELO: <ALGO ANTES DO '@'> <@> <ALGO DEPOIS DO '@'> <.> <ALGO DEPOIS DO '.'> 
   CHECK (pk_email REGEXP '^[^@]+@[^@]+\\.[^@]+$')
 );
 
 CREATE TABLE `tb_telefone` (
-  `pk_num_pais` char(3) NOT NULL DEFAULT '55',
+  `pk_num_pais` char(3) DEFAULT '55',
   `pk_ddd` char(2) NOT NULL,
   `pk_numero` char(9) NOT NULL,
-  `pk_fk_cpf` char(11) NOT NULL,
-  
-  -- CHAVE COMPOSTA DO NÚMERO DO TELEFONE + SEU DDD + SEU CODIGO DE PAIS + O CPF DA PESSOA ASSOCIADA
-  PRIMARY KEY (`pk_num_pais`, `pk_ddd`, `pk_numero`, `pk_fk_cpf`),
-  
-  -- A PESSOA ASSOCIADA AO TELEFONE
-  FOREIGN KEY (pk_fk_cpf)
-  REFERENCES tb_pessoa(pk_cpf) ON DELETE CASCADE ON UPDATE CASCADE,
-  
-  -- RESTRINGE O CÓDIGO DO PAÍS A UM NÚMERO DE 1 A 3 DÍGITOS
+  PRIMARY KEY (`pk_num_pais`, `pk_ddd`, `pk_numero`),
   CHECK (pk_num_pais REGEXP '^[0-9]{1,3}$'),
-  -- RESTRINGE O DD A UM NÚMERO DE DOIS DÍGITOS
   CHECK (pk_ddd REGEXP '^[0-9]{2}$'),
-  -- RESTRINGE O NÚMERO DO TELEFONE À UM NÚMERO DE 8 A 9 DÍGITOS (FIXO E CELULAR)
   CHECK (pk_numero REGEXP '^[0-9]{8,9}$')
 );
 
@@ -59,6 +42,27 @@ CREATE TABLE `tb_endereco` (
   CHECK (pk_cep REGEXP '^[0-9]{8}$'),
   -- GARANTE QUE O NÚMERO RESIDENCIAL NÃO É NEGATIVO
   CHECK (pk_numero >= 0)
+);
+
+CREATE TABLE `tb_pessoa_email` (
+  `pk_fk_cpf` char(11) NOT NULL,
+  `pk_fk_email` varchar(100) NOT NULL,
+  PRIMARY KEY (`pk_fk_cpf`, `pk_fk_email`),
+  UNIQUE (`pk_fk_email`), 
+  FOREIGN KEY (`pk_fk_cpf`) REFERENCES tb_pessoa(`pk_cpf`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`pk_fk_email`) REFERENCES tb_email(`pk_email`) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE `tb_pessoa_telefone` (
+  `pk_fk_cpf` char(11) NOT NULL,
+  `pk_fk_num_pais` char(3) NOT NULL,
+  `pk_fk_ddd` char(2) NOT NULL,
+  `pk_fk_numero` char(9) NOT NULL,
+  PRIMARY KEY (`pk_fk_cpf`, `pk_fk_num_pais`, `pk_fk_ddd`, `pk_fk_numero`),
+  UNIQUE (`pk_fk_num_pais`, `pk_fk_ddd`, `pk_fk_numero`),
+  FOREIGN KEY (`pk_fk_cpf`) REFERENCES tb_pessoa(`pk_cpf`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`pk_fk_num_pais`, `pk_fk_ddd`, `pk_fk_numero`) 
+    REFERENCES tb_telefone(`pk_num_pais`, `pk_ddd`, `pk_numero`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE `tb_pessoa_endereco` (
@@ -492,21 +496,25 @@ CREATE TABLE `tb_fornecedor` (
   CHECK (pk_cnpj REGEXP '^[0-9]{14}$')
 );
 
-CREATE TABLE `tb_email_fornecedor` (
-  `pk_email` varchar(100) PRIMARY KEY NOT NULL,
-  `fk_cnpj` char(14) NOT NULL,
-  FOREIGN KEY (fk_cnpj) REFERENCES tb_fornecedor(pk_cnpj) ON DELETE CASCADE ON UPDATE CASCADE,
-  CHECK (pk_email REGEXP '^[^@]+@[^@]+\\.[^@]+$')
+CREATE TABLE `tb_fornecedor_email` (
+  `pk_fk_cnpj` char(14) NOT NULL,
+  `pk_fk_email` varchar(100) NOT NULL,
+  PRIMARY KEY (`pk_fk_cnpj`, `pk_fk_email`),
+  UNIQUE (`pk_fk_email`), 
+  FOREIGN KEY (`pk_fk_cnpj`) REFERENCES tb_fornecedor(`pk_cnpj`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`pk_fk_email`) REFERENCES tb_email(`pk_email`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE `tb_telefone_fornecedor` (
-  `pk_ddd` char(2) NOT NULL,
-  `pk_numero` char(9) NOT NULL,
-  `fk_cnpj` char(14) NOT NULL,
-  PRIMARY KEY (`pk_ddd`, `pk_numero`),
-  FOREIGN KEY (fk_cnpj) REFERENCES tb_fornecedor(pk_cnpj) ON DELETE CASCADE ON UPDATE CASCADE,
-  CHECK (pk_ddd REGEXP '^[0-9]{2}$'),
-  CHECK (pk_numero REGEXP '^[0-9]{8,9}$')
+CREATE TABLE `tb_fornecedor_telefone` (
+  `pk_fk_cnpj` char(14) NOT NULL,
+  `pk_fk_num_pais` char(3) NOT NULL,
+  `pk_fk_ddd` char(2) NOT NULL,
+  `pk_fk_numero` char(9) NOT NULL,
+  PRIMARY KEY (`pk_fk_cnpj`, `pk_fk_num_pais`, `pk_fk_ddd`, `pk_fk_numero`),
+  UNIQUE (`pk_fk_num_pais`, `pk_fk_ddd`, `pk_fk_numero`),
+  FOREIGN KEY (`pk_fk_cnpj`) REFERENCES tb_fornecedor(`pk_cnpj`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`pk_fk_num_pais`, `pk_fk_ddd`, `pk_fk_numero`) 
+    REFERENCES tb_telefone(`pk_num_pais`, `pk_ddd`, `pk_numero`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE `tb_compra` (
@@ -679,6 +687,13 @@ CREATE TABLE dim_status (
     status_nome VARCHAR(50) NOT NULL UNIQUE
 );
 
+CREATE TABLE dim_natureza_financeira (
+    sk_natureza INT AUTO_INCREMENT PRIMARY KEY,
+    codigo_operacional INT, -- 1 para Receita, 2 para Encargo, 3 para Despesa
+    nome_natureza VARCHAR(50) UNIQUE,
+    tipo_movimentacao ENUM('ENTRADA', 'SAÍDA')
+);
+
 CREATE TABLE dim_tempo (
     sk_tempo INT PRIMARY KEY, -- Formato YYYYMMDD (Ex: 20260506)
     data_completa DATE NOT NULL,
@@ -699,15 +714,15 @@ CREATE TABLE dim_tempo (
 -- 1. Fato Acadêmico-> Granularidade: Um registro por aluno, por turma e por trimestre.
 CREATE TABLE fato_academico (
     sk_aluno INT NOT NULL,
-    sk_turma INT NOT NULL,  -- Esta chave agora traz Curso e Disciplina junto
+    sk_turma INT NOT NULL,
     sk_unidade INT NOT NULL,
     sk_tempo INT NOT NULL,
-    sk_status int not null,
+    sk_status INT NOT NULL,
+    num_trimestre INT NOT NULL, -- <--- NOVA COLUNA
     
-    nota DECIMAL(4,2), -- Métrica não-aditiva
-    total_faltas INT DEFAULT 0, -- Métrica aditiva
-    
-    qtd_matricula INT DEFAULT 1, -- Métrica aditiva
+    nota DECIMAL(4,2),
+    total_faltas INT DEFAULT 0,
+    qtd_matricula DECIMAL(4,2) DEFAULT 1.00, -- Mudei para DECIMAL para aceitar o 0.25
     
     FOREIGN KEY (sk_aluno) REFERENCES dim_aluno(sk_aluno),
     FOREIGN KEY (sk_turma) REFERENCES dim_turma(sk_turma),
@@ -715,12 +730,12 @@ CREATE TABLE fato_academico (
     FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo),
     FOREIGN KEY (sk_status) REFERENCES dim_status(sk_status),
     
-    UNIQUE (sk_aluno,sk_turma,sk_tempo),
-    
+    -- A PRIMARY KEY agora inclui o trimestre para evitar o erro 1062
     PRIMARY KEY (
         sk_aluno,
         sk_turma,
-        sk_tempo
+        sk_tempo,
+        num_trimestre
     )
 );
 
@@ -730,25 +745,19 @@ CREATE TABLE fato_financeiro (
     sk_tempo INT NOT NULL,
     sk_unidade INT NOT NULL,
     sk_forma_pagamento INT NOT NULL,
-    sk_aluno INT DEFAULT 0,      -- Se for saída (compra), pode ser 0 ou NULL
-    sk_fornecedor INT DEFAULT 0, -- Se for entrada (mensalidade), pode ser 0 ou NULL
-    sk_produto INT DEFAULT 0,    -- Usado apenas para compras de material
+    sk_natureza INT NOT NULL, --  1=Mensalidade, 2=Encargo, 3=Compra
+    sk_entidade_id INT NOT NULL, -- (Aluno ou Fornecedor)
     
-    valor_pago DECIMAL(10,2) DEFAULT 0.00, -- Métrica aditiva
-    valor_total_encargos DECIMAL(10,2) DEFAULT 0.00, -- Juros e multas recebidos, métrica aditiva
-    qtd_mensalidade_paga INT DEFAULT 0, -- Métrica aditiva
+    valor_total DECIMAL(10,2) NOT NULL, -- TODA a grana aqui
+    quantidade INT DEFAULT 1,      -- Qtd de itens ou mensalidades
+    num_documento VARCHAR(50) NOT NULL, -- NSU DA MENSALIDADE
     
-    valor_total_compra DECIMAL(10,2) DEFAULT 0.00, -- Métrica aditiva
-    quantidade_comprada INT DEFAULT 0, -- Métrica aditiva
-    
+    PRIMARY KEY (sk_tempo, sk_unidade, sk_forma_pagamento, sk_natureza, sk_entidade_id,num_documento),
     FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo),
     FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
     FOREIGN KEY (sk_forma_pagamento) REFERENCES dim_forma_pagamento(sk_forma_pagamento),
-    FOREIGN KEY (sk_aluno) REFERENCES dim_aluno(sk_aluno),
-    FOREIGN KEY (sk_fornecedor) REFERENCES dim_fornecedor(sk_fornecedor),
-    FOREIGN KEY (sk_produto) REFERENCES dim_produto(sk_produto)
-    
-    -- pk
+    FOREIGN KEY (sk_natureza) REFERENCES dim_natureza_financeira(sk_natureza)
+    -- A foreign key de sk_entidade_id é definida na inserção, caso seja aluno ou fornecedor
 );
 
 -- 3. Fato RH-> Granularidade: Um registro por funcionário, por unidade e por mês de referência.
@@ -780,6 +789,8 @@ CREATE TABLE fato_rh (
     FOREIGN KEY (sk_funcionario) REFERENCES dim_funcionario(sk_funcionario),
     FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
     FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo)
+    
+    -- pk
 );
 
 -- TABELAS FATO --------FIM--------
