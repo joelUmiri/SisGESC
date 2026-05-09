@@ -11,10 +11,10 @@ select pk_id_pagamento, valor_pago, data_pagamento, forma_pagamento from tb_paga
 
 -- SELECT SIMPLES --------FIM--------
 
--- SUBSELECT --------INICIO--------
+-- SUBSELECT (OLTP) --------INICIO--------
 
 -- SUBSELECT QUE RETORNA CPF E NOME DOS ALUNOS CADASTRADOS
-EXPLAIN SELECT 
+SELECT 
     pk_cpf, 
     CONCAT(primeiro_nome, ' ', sobrenome) AS 'Nome do Aluno'
 FROM tb_pessoa
@@ -24,7 +24,6 @@ WHERE pk_cpf IN (
 );
 
 -- SUBSELECT QUE RETORNA NOME E RA DOS ALUNOS
-
 SELECT 
     a.pk_ra AS 'RA', 
     (
@@ -34,7 +33,7 @@ SELECT
     ) AS 'Nome do Aluno'
 FROM tb_aluno AS a;
 
--- RETORNA O NOME COMPLETO DOS ALUNOS CUJA SOMA DAS FALTAS TOTAIS É MAIOR QUE QUINZE.
+--  SUBSELECT QUE RETORNA O NOME COMPLETO DOS ALUNOS CUJA SOMA DAS FALTAS TOTAIS É MAIOR QUE 15.
 SELECT 
     CONCAT(p.primeiro_nome, ' ', p.sobrenome) AS 'Aluno com Alto Absenteísmo'
 FROM tb_pessoa p
@@ -92,7 +91,7 @@ WHERE f.pk_n_contratacao IN (
     HAVING SUM(carga_horaria) > 20
 );
 
--- RETORNA OS FORNECEDORES QUE POSSUEM UM ALTO VOLUME DE ITENS VENDIDOS PARA A ESCOLA
+-- SUBSELECT QUE RETORNA OS FORNECEDORES QUE POSSUEM UM ALTO VOLUME DE ITENS VENDIDOS PARA A ESCOLA
 SELECT 
     f.nome_fantasia AS 'Fornecedor Estratégico',
     f.pk_cnpj AS 'CNPJ'
@@ -131,8 +130,8 @@ INSERT INTO tb_pessoa (pk_cpf, primeiro_nome, sobrenome, data_nasc, genero, defi
 ('94857230192', 'Ana2', 'Silva', '2005-03-12', 'Feminino', 'Nenhuma', 'Parda');
 COMMIT;
 
--- COMMIT --------FIM--------
+-- COMMIT --------FIM-------------------
 
--- JOIN --------INICIO--------
+-- SELECTS (OLAP) --------INICIO--------
 
--- JOIN --------FIM--------
+-- SELECTS (OLAP) --------FIM-----------
