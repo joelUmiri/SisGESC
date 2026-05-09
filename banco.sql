@@ -153,16 +153,19 @@ CREATE TABLE `tb_func_cargo` (
   )
 );
 
-CREATE TABLE `tb_docente_detalhes` (
-  `pk_fk_n_contratacao` int PRIMARY KEY NOT NULL,
-  `categoria_docente` varchar(255) NOT NULL,
+CREATE TABLE `tb_funcionario_formacao` (
+  `fk_n_contratacao` int NOT NULL,
   `fk_id_formacao` int NOT NULL,
+  `dt_conclusao` date, -- Informação importante para o RH
+  `instituicao` varchar(100),
   
-  -- FKs QUE APONTAM O FUNCIONÁRIO E SUA FORMAÇÃO
-  FOREIGN KEY (pk_fk_n_contratacao)
-  REFERENCES tb_funcionario(pk_n_contratacao)ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (fk_id_formacao)
-  REFERENCES tb_formacao(pk_id_formacao)ON DELETE CASCADE ON UPDATE CASCADE
+  PRIMARY KEY (`fk_n_contratacao`, `fk_id_formacao`),
+  
+  FOREIGN KEY (`fk_n_contratacao`) 
+    REFERENCES tb_funcionario(`pk_n_contratacao`) ON DELETE CASCADE ON UPDATE CASCADE,
+    
+  FOREIGN KEY (`fk_id_formacao`) 
+    REFERENCES tb_formacao(`pk_id_formacao`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE `tb_ferias` (
@@ -773,6 +776,9 @@ CREATE TABLE fato_rh (
     total_descontos DECIMAL(10,2), -- Métrica aditiva
     salario_liquido DECIMAL(10,2), -- Métrica semi-aditiva
     
+    -- Métrica de Contagem Técnica
+    count_funcionario INT DEFAULT 1,
+    
     -- Métricas de Frequência e Horas
     horas_trabalhadas DECIMAL(6,2),  -- Métrica aditiva
     horas_extra DECIMAL(6,2), -- Métrica aditiva
@@ -788,9 +794,13 @@ CREATE TABLE fato_rh (
 
     FOREIGN KEY (sk_funcionario) REFERENCES dim_funcionario(sk_funcionario),
     FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
-    FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo)
+    FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo),
     
-    -- pk
+    PRIMARY KEY (
+    sk_funcionario,
+    sk_unidade,
+    sk_tempo
+)
 );
 
 -- TABELAS FATO --------FIM--------
