@@ -361,7 +361,7 @@ VALUES
 select count(*) from tb_funcionario_formacao;
 
 INSERT INTO tb_funcionario_formacao 
-(fk_n_contratacao, fk_id_formacao, dt_conclusao, instituicao)
+(pk_fk_n_contratacao, pk_fk_id_formacao, dt_conclusao, instituicao)
 VALUES
 
 (1001, 1, '2020-12-15', 'FIAP'),

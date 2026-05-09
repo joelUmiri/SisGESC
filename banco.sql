@@ -187,7 +187,6 @@ CREATE TABLE `tb_ferias` (
   
   UNIQUE (data_inicio, fk_n_contratacao)
 );
-
 CREATE TABLE `tb_ponto` (
   `pk_id_ponto` int PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `fk_n_contratacao` int NOT NULL,

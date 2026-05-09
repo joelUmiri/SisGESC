@@ -1,7 +1,6 @@
 USE DB_INFINITY_SCHOOL;
 
 -- SELECT SIMPLES --------INICIO--------
-
 select pk_cpf, primeiro_nome, sobrenome from tb_pessoa;
 select pk_fk_ra, data_matricula, status_matricula from tb_matricula;
 select pk_fk_ra, data_matricula, status_matricula from tb_matricula where status_matricula = "Cursando";
