@@ -1,6 +1,12 @@
 use DB_INFINITY_SCHOOL;
 
 -- DIMENSOES --------INICIO--------
+
+-- ============================================================
+-- 1. ALUNO
+-- ============================================================
+select count(*) from dim_aluno;
+
 -- Inserção do dummy de aluno
 SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
 INSERT INTO dim_aluno (sk_aluno, ra, cpf, nome_completo, genero, etnia, deficiencia, data_nascimento)
@@ -26,7 +32,10 @@ ON DUPLICATE KEY UPDATE
     deficiencia = VALUES(deficiencia),
     ra = VALUES(ra);
 
-select * from dim_aluno;
+-- ============================================================
+-- 2. FUNCIONARIO
+-- ============================================================
+select count(*) from dim_funcionario;
 
 -- Insercao do dummy funcionario (Caso nao tenha rodado antes)
 SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
@@ -64,8 +73,10 @@ ON DUPLICATE KEY UPDATE
     nome_completo = VALUES(nome_completo),
     status_funcionario = VALUES(status_funcionario);
 
--- Conferindo o resultado
-SELECT * FROM dim_funcionario;
+-- ============================================================
+-- 3. UNIDADE
+-- ============================================================
+select count(*) from dim_unidade;
 
 -- Inserção do dummy unidade (Unidade Zero)
 SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
@@ -95,8 +106,10 @@ ON DUPLICATE KEY UPDATE
     num_logradouro = VALUES(num_logradouro),
     complemento = VALUES(complemento);
 
--- Checando o resultado
-SELECT * FROM dim_unidade;
+-- ============================================================
+-- 4. TURMA
+-- ============================================================
+select count(*) from dim_turma;
 
 -- Inserção do dummy turma (Turma Zero)
 SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
@@ -140,8 +153,10 @@ ON DUPLICATE KEY UPDATE
     data_inicio_turma = VALUES(data_inicio_turma),
     duracao_meses_curso = VALUES(duracao_meses_curso);
 
--- Verificando o resultado
-SELECT * FROM dim_turma;
+-- ============================================================
+-- 5. FORMA DE PAGAMENTO
+-- ============================================================
+select count(*) from dim_forma_pagamento;
 
 -- Inserção do dummy forma de pagamento (Forma de Pagamento Zero)
 SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
@@ -156,8 +171,10 @@ SELECT forma_pagamento
 FROM tb_pagamento
 ON DUPLICATE KEY UPDATE forma_pagamento = VALUES(forma_pagamento);
 
--- Verificando
-SELECT * FROM dim_forma_pagamento;
+-- ============================================================
+-- 6. FORNECEDOR
+-- ============================================================
+select count(*) from dim_fornecedor;
 
 -- Inserção do dummy fornecedor (Fornecedor Zero)
 SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
@@ -202,12 +219,22 @@ SELECT * FROM dim_produto;
 INSERT INTO dim_status (sk_status, status_nome) VALUES 
 (1, 'Aprovado'),
 (2, 'Reprovado'),
-(3, 'Exame'),
+(3, 'Cursando'),
 (4, 'Trancado'),
 (5, 'Evadido'),
 (6, 'N/A')
 ON DUPLICATE KEY UPDATE 
 status_nome = VALUES(status_nome);
+
+select * from dim_status;
+
+INSERT INTO dim_natureza_financeira (codigo_operacional, nome_natureza, tipo_movimentacao) VALUES
+(1, 'Mensalidade', 'ENTRADA'),
+(2, 'Encargos (Multas/Juros)', 'ENTRADA'),
+(3, 'Compra de Material/Produto', 'SAÍDA')
+on duplicate key update
+codigo_operacional=values(codigo_operacional),
+tipo_movimentacao=values(tipo_movimentacao);
 
 select * from dim_status;
 
@@ -1371,68 +1398,84 @@ select * from dim_tempo where data_completa between '2026-01-01' and '2026-12-31
 select * from dim_tempo where data_completa between '2027-01-01' and '2027-12-31';
 
 INSERT INTO fato_academico (
-    sk_aluno,
-    sk_turma,
-    sk_unidade,
-    sk_tempo,
-    sk_status,
-    nota,
-    total_faltas,
-    qtd_matricula
+    sk_aluno, sk_turma, sk_unidade, sk_tempo, sk_status, 
+    num_trimestre, nota, total_faltas, qtd_matricula
 )
+-- TRIMESTRE 1
 SELECT
-    da.sk_aluno,
-    dt.sk_turma,
-    du.sk_unidade,
-    dtempo.sk_tempo,
-    ds.sk_status,
-    ROUND(
-        (
-            COALESCE(m.nota1, 0) +
-            COALESCE(m.nota2, 0) +
-            COALESCE(m.nota3, 0) +
-            COALESCE(m.nota4, 0)
-        ) /
-        NULLIF(
-            (CASE WHEN m.nota1 IS NOT NULL THEN 1 ELSE 0 END) +
-            (CASE WHEN m.nota2 IS NOT NULL THEN 1 ELSE 0 END) +
-            (CASE WHEN m.nota3 IS NOT NULL THEN 1 ELSE 0 END) +
-            (CASE WHEN m.nota4 IS NOT NULL THEN 1 ELSE 0 END),
-            0
-        ),
-        2
-    ) AS nota,
-    m.total_faltas,
-    1 AS qtd_matricula
+    da.sk_aluno, dt.sk_turma, du.sk_unidade, dtempo.sk_tempo, ds.sk_status,1,
+    m.nota1 AS nota,
+    m.total_faltas / 4 AS total_faltas, -- Dividindo faltas por 4 para não quadruplicar o total no BI
+    0.25 AS qtd_matricula -- Cada linha representa 1/4 da matrícula total
 FROM tb_matricula m
-JOIN dim_aluno da
-    ON da.ra = m.pk_fk_ra
-JOIN dim_turma dt
-    ON dt.id_turma = m.pk_fk_id_turma
-JOIN tb_turma t
-    ON t.pk_id_turma = m.pk_fk_id_turma
-JOIN dim_unidade du
-    ON du.id_unidade = t.fk_id_unidade
-JOIN dim_status ds
-    ON ds.status_nome = m.status_matricula
-JOIN dim_tempo dtempo
-    ON dtempo.data_completa = m.data_matricula;
+JOIN dim_aluno da ON da.ra = m.pk_fk_ra
+JOIN dim_turma dt ON dt.id_turma = m.pk_fk_id_turma
+JOIN tb_turma t ON t.pk_id_turma = m.pk_fk_id_turma
+JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
+JOIN dim_status ds ON ds.status_nome = m.status_matricula
+JOIN dim_tempo dtempo ON dtempo.data_completa = m.data_matricula
+WHERE m.nota1 IS NOT NULL
+
+UNION ALL
+
+-- TRIMESTRE 2
+SELECT
+    da.sk_aluno, dt.sk_turma, du.sk_unidade, dtempo.sk_tempo, ds.sk_status,2,
+    m.nota2 AS nota,
+    m.total_faltas / 4,
+    0.25
+FROM tb_matricula m
+JOIN dim_aluno da ON da.ra = m.pk_fk_ra
+JOIN dim_turma dt ON dt.id_turma = m.pk_fk_id_turma
+JOIN tb_turma t ON t.pk_id_turma = m.pk_fk_id_turma
+JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
+JOIN dim_status ds ON ds.status_nome = m.status_matricula
+JOIN dim_tempo dtempo ON dtempo.data_completa = m.data_matricula
+WHERE m.nota2 IS NOT NULL
+
+UNION ALL
+
+-- TRIMESTRE 3
+SELECT
+    da.sk_aluno, dt.sk_turma, du.sk_unidade, dtempo.sk_tempo, ds.sk_status,3,
+    m.nota2 AS nota,
+    m.total_faltas / 4,
+    0.25
+FROM tb_matricula m
+JOIN dim_aluno da ON da.ra = m.pk_fk_ra
+JOIN dim_turma dt ON dt.id_turma = m.pk_fk_id_turma
+JOIN tb_turma t ON t.pk_id_turma = m.pk_fk_id_turma
+JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
+JOIN dim_status ds ON ds.status_nome = m.status_matricula
+JOIN dim_tempo dtempo ON dtempo.data_completa = m.data_matricula
+WHERE m.nota3 IS NOT NULL
+
+UNION ALL
+-- TRIMESTRE 4
+SELECT
+    da.sk_aluno, dt.sk_turma, du.sk_unidade, dtempo.sk_tempo, ds.sk_status,4,
+    m.nota2 AS nota,
+    m.total_faltas / 4,
+    0.25
+FROM tb_matricula m
+JOIN dim_aluno da ON da.ra = m.pk_fk_ra
+JOIN dim_turma dt ON dt.id_turma = m.pk_fk_id_turma
+JOIN tb_turma t ON t.pk_id_turma = m.pk_fk_id_turma
+JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
+JOIN dim_status ds ON ds.status_nome = m.status_matricula
+JOIN dim_tempo dtempo ON dtempo.data_completa = m.data_matricula
+WHERE m.nota4 IS NOT NULL;
 
 SELECT
-    fa.sk_aluno,
     da.nome_completo AS aluno,
-    fa.sk_turma,
     dt.nome_curso,
     dt.nome_disciplina,
     dt.turno,
-    fa.sk_unidade,
     du.nome_unidade,
-    fa.sk_tempo,
-    dtempo.data_completa,
-    dtempo.trimestre,
+    dtempo.data_completa AS data_matricula,
+    fa.num_trimestre AS trimestre_da_nota, 
     dtempo.ano,
-    fa.sk_status,
-    ds.status_nome,
+    ds.status_nome AS status_atual,
     fa.nota,
     fa.total_faltas,
     fa.qtd_matricula
@@ -1448,4 +1491,154 @@ JOIN dim_tempo dtempo
 JOIN dim_status ds
     ON fa.sk_status = ds.sk_status
 ORDER BY
-    da.nome_completo;
+    da.nome_completo, 
+    fa.num_trimestre;
+    
+-- INSERIR FATO_FINANCEIRO---------------------------------------------------------------------------------------------------
+INSERT INTO fato_financeiro (
+    sk_tempo, sk_unidade, sk_forma_pagamento, sk_natureza, 
+    sk_entidade_id, num_documento, valor_total, quantidade
+)
+SELECT 
+    dt.sk_tempo, 
+    du.sk_unidade, 
+    dfp.sk_forma_pagamento, 
+    dn.sk_natureza, 
+    da.sk_aluno, 
+    men.pk_nsu,
+    pg.valor_pago, 
+    1
+FROM tb_pagamento pg
+JOIN tb_conta_receber cr ON cr.pk_id_conta_receber = pg.fk_id_conta_receber
+JOIN tb_mensalidade men ON men.pk_nsu = cr.fk_nsu
+JOIN tb_contrato c ON c.pk_registro_nrcontrato = men.fk_registro_nrcontrato
+JOIN dim_aluno da ON da.ra = c.fk_ra
+JOIN tb_turma t ON t.pk_id_turma = c.fk_id_turma
+JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
+JOIN dim_tempo dt ON dt.data_completa = pg.data_pagamento
+JOIN dim_forma_pagamento dfp ON LOWER(dfp.forma_pagamento) = LOWER(pg.forma_pagamento)
+JOIN dim_natureza_financeira dn ON dn.codigo_operacional = 1; -- 1. Mensalidade
+
+INSERT INTO fato_financeiro (
+    sk_tempo, 
+    sk_unidade, 
+    sk_forma_pagamento, 
+    sk_natureza, 
+    sk_entidade_id, 
+    num_documento, -- Adicionado aqui
+    valor_total, 
+    quantidade
+)
+SELECT 
+    dt.sk_tempo, 
+    du.sk_unidade, 
+    dfp.sk_forma_pagamento, 
+    dn.sk_natureza, 
+    da.sk_aluno, 
+    men.pk_nsu, -- Passando o NSU para identificar de qual parcela é o encargo
+    (COALESCE(i.multa, 0) + COALESCE(i.juros, 0)), 
+    1
+FROM tb_inadimplencia i
+JOIN tb_mensalidade men ON i.fk_nsu = men.pk_nsu
+JOIN tb_conta_receber cr ON cr.fk_nsu = men.pk_nsu
+JOIN tb_pagamento pg ON pg.fk_id_conta_receber = cr.pk_id_conta_receber
+JOIN tb_contrato c ON c.pk_registro_nrcontrato = men.fk_registro_nrcontrato
+JOIN dim_aluno da ON da.ra = c.fk_ra
+JOIN tb_turma t ON t.pk_id_turma = c.fk_id_turma
+JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
+JOIN dim_tempo dt ON dt.data_completa = pg.data_pagamento
+JOIN dim_forma_pagamento dfp ON LOWER(dfp.forma_pagamento) = LOWER(pg.forma_pagamento)
+JOIN dim_natureza_financeira dn ON dn.codigo_operacional = 2 -- 2. Encargos
+WHERE (i.multa + i.juros) > 0;
+
+INSERT INTO fato_financeiro (
+    sk_tempo,
+    sk_unidade,
+    sk_forma_pagamento,
+    sk_natureza,
+    sk_entidade_id,
+    num_documento,
+    valor_total,
+    quantidade
+)
+SELECT 
+    dt.sk_tempo,
+    du.sk_unidade,
+    0,
+    dn.sk_natureza,
+    df.sk_fornecedor,
+    c.pk_nfe,
+    SUM(ic.valor_unitario * ic.qtd),
+    SUM(ic.qtd)
+FROM tb_item_compra ic
+JOIN tb_compra c 
+    ON c.pk_nfe = ic.pk_fk_nfe
+JOIN dim_fornecedor df 
+    ON df.cnpj = c.fk_cnpj
+JOIN tb_conta_pagar cp 
+    ON cp.fk_nfe = c.pk_nfe
+JOIN dim_tempo dt 
+    ON dt.data_completa = cp.data_pagamento
+JOIN tb_unidade tu 
+    ON tu.pk_id_unidade = 1
+JOIN dim_unidade du 
+    ON du.id_unidade = tu.pk_id_unidade
+JOIN dim_natureza_financeira dn 
+    ON dn.codigo_operacional = 3 -- 3. Compra
+GROUP BY
+    dt.sk_tempo,
+    du.sk_unidade,
+    dn.sk_natureza,
+    df.sk_fornecedor,
+    c.pk_nfe;
+
+SELECT 
+    dt.data_completa AS data_movimentacao,
+    dn.nome_natureza AS categoria,
+    dn.tipo_movimentacao,
+    du.nome_unidade AS unidade,
+    dfp.forma_pagamento,
+    -- Lógica para identificar a entidade (Aluno ou Fornecedor)
+    CASE 
+        WHEN dn.codigo_operacional IN (1, 2) THEN da.nome_completo
+        WHEN dn.codigo_operacional = 3 THEN dfor.nome_fantasia
+        ELSE 'Não identificado'
+    END AS entidade_nome,
+    
+    ff.valor_total,
+    ff.quantidade
+FROM fato_financeiro ff
+JOIN dim_tempo dt 
+    ON ff.sk_tempo = dt.sk_tempo
+JOIN dim_unidade du 
+    ON ff.sk_unidade = du.sk_unidade
+JOIN dim_natureza_financeira dn 
+    ON ff.sk_natureza = dn.sk_natureza
+LEFT JOIN dim_forma_pagamento dfp 
+    ON ff.sk_forma_pagamento = dfp.sk_forma_pagamento
+-- Joins condicionais para buscar o nome correto
+LEFT JOIN dim_aluno da 
+    ON ff.sk_entidade_id = da.sk_aluno AND dn.codigo_operacional IN (1, 2)
+LEFT JOIN dim_fornecedor dfor 
+    ON ff.sk_entidade_id = dfor.sk_fornecedor AND dn.codigo_operacional = 3
+ORDER BY 
+    dt.data_completa DESC, 
+    dn.tipo_movimentacao ASC;
+    
+SELECT
+    c.pk_nfe,
+    p.nome_produto,
+    ic.qtd,
+    ic.valor_unitario,
+    (ic.qtd * ic.valor_unitario) AS subtotal
+FROM tb_item_compra ic
+JOIN tb_compra c
+    ON c.pk_nfe = ic.pk_fk_nfe
+JOIN tb_produto p
+    ON p.pk_id_produto = ic.pk_fk_id_produto;
+    
+SELECT SUM(valor_pago) as total_oltp_mensalidades 
+FROM tb_pagamento;
+SELECT SUM(valor_total) as total_olap_mensalidades 
+FROM fato_financeiro 
+WHERE sk_natureza = 1;
