@@ -75,14 +75,22 @@ ON DUPLICATE KEY UPDATE sk_unidade = 0;
 SET SESSION sql_mode='';
 
 -- Carga das unidades reais
-INSERT INTO dim_unidade (nome_unidade, logradouro, num_logradouro, complemento)
-SELECT 
-    nome_unidade, 
-    logradouro, 
-    num_logradouro, 
+INSERT INTO dim_unidade (
+    id_unidade,
+    nome_unidade,
+    logradouro,
+    num_logradouro,
     complemento
-FROM tb_unidade -- Assumindo que o nome da tabela operacional é tb_unidade
+)
+SELECT
+    pk_id_unidade,
+    nome_unidade,
+    logradouro,
+    num_logradouro,
+    complemento
+FROM tb_unidade
 ON DUPLICATE KEY UPDATE
+    nome_unidade = VALUES(nome_unidade),
     logradouro = VALUES(logradouro),
     num_logradouro = VALUES(num_logradouro),
     complemento = VALUES(complemento);
@@ -190,6 +198,18 @@ ON DUPLICATE KEY UPDATE
 
 -- Conferindo o resultado
 SELECT * FROM dim_produto;
+
+INSERT INTO dim_status (sk_status, status_nome) VALUES 
+(1, 'Aprovado'),
+(2, 'Reprovado'),
+(3, 'Exame'),
+(4, 'Trancado'),
+(5, 'Evadido'),
+(6, 'N/A')
+ON DUPLICATE KEY UPDATE 
+status_nome = VALUES(status_nome);
+
+select * from dim_status;
 
 INSERT INTO dim_tempo (
     sk_tempo,
@@ -1301,4 +1321,131 @@ VALUES
 (20271230, '2027-12-30', 30, 12, 'Dezembro', 4, 2027, 'Quinta-feira', 2, 0, NULL),
 (20271231, '2027-12-31', 31, 12, 'Dezembro', 4, 2027, 'Sexta-feira', 2, 0, NULL);
 
-select * from dim_tempo where data_completa between '2028-01-01' and '2028-12-31';
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Confraternização Universal' WHERE sk_tempo = 20250101;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Carnaval' WHERE sk_tempo = 20250304;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Sexta-feira Santa' WHERE sk_tempo = 20250418;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Páscoa' WHERE sk_tempo = 20250420;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Tiradentes' WHERE sk_tempo = 20250421;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia do Trabalho' WHERE sk_tempo = 20250501;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Corpus Christi' WHERE sk_tempo = 20250619;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Independência do Brasil' WHERE sk_tempo = 20250907;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Nossa Sra. Aparecida' WHERE sk_tempo = 20251012;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia do Professor' WHERE sk_tempo = 20251015;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Finados' WHERE sk_tempo = 20251102;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Proclamação da República' WHERE sk_tempo = 20251115;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia da Consciência Negra' WHERE sk_tempo = 20251120;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Natal' WHERE sk_tempo = 20251225;
+
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Confraternização Universal' WHERE sk_tempo = 20260101;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Carnaval' WHERE sk_tempo = 20260217;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Sexta-feira Santa' WHERE sk_tempo = 20260403;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Páscoa' WHERE sk_tempo = 20260405;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Tiradentes' WHERE sk_tempo = 20260421;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia do Trabalho' WHERE sk_tempo = 20260501;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Corpus Christi' WHERE sk_tempo = 20260604;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Independência do Brasil' WHERE sk_tempo = 20260907;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Nossa Sra. Aparecida' WHERE sk_tempo = 20261012;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia do Professor' WHERE sk_tempo = 20261015;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Finados' WHERE sk_tempo = 20261102;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Proclamação da República' WHERE sk_tempo = 20261115;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia da Consciência Negra' WHERE sk_tempo = 20261120;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Natal' WHERE sk_tempo = 20261225;
+
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Confraternização Universal' WHERE sk_tempo = 20270101;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Carnaval' WHERE sk_tempo = 20270209;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Sexta-feira Santa' WHERE sk_tempo = 20270326;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Páscoa' WHERE sk_tempo = 20270328;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Tiradentes' WHERE sk_tempo = 20270421;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia do Trabalho' WHERE sk_tempo = 20270501;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Corpus Christi' WHERE sk_tempo = 20270527;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Independência do Brasil' WHERE sk_tempo = 20270907;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Nossa Sra. Aparecida' WHERE sk_tempo = 20271012;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia do Professor' WHERE sk_tempo = 20271015;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Finados' WHERE sk_tempo = 20271102;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Proclamação da República' WHERE sk_tempo = 20271115;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia da Consciência Negra' WHERE sk_tempo = 20271120;
+UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Natal' WHERE sk_tempo = 20271225;
+
+select * from dim_tempo where data_completa between '2025-01-01' and '2025-12-31';
+select * from dim_tempo where data_completa between '2026-01-01' and '2026-12-31';
+select * from dim_tempo where data_completa between '2027-01-01' and '2027-12-31';
+
+INSERT INTO fato_academico (
+    sk_aluno,
+    sk_turma,
+    sk_unidade,
+    sk_tempo,
+    sk_status,
+    nota,
+    total_faltas,
+    qtd_matricula
+)
+SELECT
+    da.sk_aluno,
+    dt.sk_turma,
+    du.sk_unidade,
+    dtempo.sk_tempo,
+    ds.sk_status,
+    ROUND(
+        (
+            COALESCE(m.nota1, 0) +
+            COALESCE(m.nota2, 0) +
+            COALESCE(m.nota3, 0) +
+            COALESCE(m.nota4, 0)
+        ) /
+        NULLIF(
+            (CASE WHEN m.nota1 IS NOT NULL THEN 1 ELSE 0 END) +
+            (CASE WHEN m.nota2 IS NOT NULL THEN 1 ELSE 0 END) +
+            (CASE WHEN m.nota3 IS NOT NULL THEN 1 ELSE 0 END) +
+            (CASE WHEN m.nota4 IS NOT NULL THEN 1 ELSE 0 END),
+            0
+        ),
+        2
+    ) AS nota,
+    m.total_faltas,
+    1 AS qtd_matricula
+FROM tb_matricula m
+JOIN dim_aluno da
+    ON da.ra = m.pk_fk_ra
+JOIN dim_turma dt
+    ON dt.id_turma = m.pk_fk_id_turma
+JOIN tb_turma t
+    ON t.pk_id_turma = m.pk_fk_id_turma
+JOIN dim_unidade du
+    ON du.id_unidade = t.fk_id_unidade
+JOIN dim_status ds
+    ON ds.status_nome = m.status_matricula
+JOIN dim_tempo dtempo
+    ON dtempo.data_completa = m.data_matricula;
+
+SELECT
+    fa.sk_aluno,
+    da.nome_completo AS aluno,
+    fa.sk_turma,
+    dt.nome_curso,
+    dt.nome_disciplina,
+    dt.turno,
+    fa.sk_unidade,
+    du.nome_unidade,
+    fa.sk_tempo,
+    dtempo.data_completa,
+    dtempo.trimestre,
+    dtempo.ano,
+    fa.sk_status,
+    ds.status_nome,
+    fa.nota,
+    fa.total_faltas,
+    fa.qtd_matricula
+FROM fato_academico fa
+JOIN dim_aluno da
+    ON fa.sk_aluno = da.sk_aluno
+JOIN dim_turma dt
+    ON fa.sk_turma = dt.sk_turma
+JOIN dim_unidade du
+    ON fa.sk_unidade = du.sk_unidade
+JOIN dim_tempo dtempo
+    ON fa.sk_tempo = dtempo.sk_tempo
+JOIN dim_status ds
+    ON fa.sk_status = ds.sk_status
+ORDER BY
+    da.nome_completo;
