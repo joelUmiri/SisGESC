@@ -355,18 +355,29 @@ VALUES
 (1013, 5, 5, '2020-02-01', '2025-02-15');
 
 -- ============================================================
--- 14. DOCENTE_DETALHES
+-- 14. FUNCIONARIO_FORMACAO
 -- ============================================================
 
-select count(*) from tb_docente_detalhes;
+select count(*) from tb_funcionario_formacao;
 
-INSERT INTO tb_docente_detalhes
-(pk_fk_n_contratacao, categoria_docente, fk_id_formacao)
+INSERT INTO tb_funcionario_formacao 
+(fk_n_contratacao, fk_id_formacao, dt_conclusao, instituicao)
 VALUES
-(1001, 'Instrutor Principal', 1),
-(1008, 'Instrutor Assistente', 2),
-(1009, 'Instrutor Senior', 5),
-(1011, 'Instrutor Especialista', 6);
+
+(1001, 1, '2020-12-15', 'FIAP'),
+(1008, 2, '2021-06-30', 'USP'),
+(1009, 5, '2019-11-20', 'Mackenzie'),
+(1011, 6, '2022-01-10', 'PUC'),
+
+(1002, 4, '2018-05-20', 'FGV'),          -- Administrador
+(1003, 10, '2015-12-01', 'FATEC'),       -- Gestão Financeira
+(1004, 9, '2022-12-18', 'Anhembi'),      -- Marketing
+(1005, 3, '2010-07-15', 'Unicamp'),      -- Pedagogia
+(1006, 7, '2023-12-01', 'Impacta'),      -- Banco de Dados
+(1007, 8, '2021-02-10', 'Senac'),        -- Design Instrucional
+(1010, 1, '2023-06-15', 'Infinity School'), 
+(1012, 4, '2020-01-20', 'UFRJ'),
+(1013, 2, '2017-08-30', 'UFMG');
 
 -- ============================================================
 -- 15. FERIAS
@@ -575,11 +586,11 @@ select count(*) from tb_unidade;
 INSERT INTO tb_unidade
 (pk_id_unidade, nome_unidade, logradouro, num_logradouro, complemento)
 VALUES
-(1, 'Infinity Centro', 'Rua Principal', '100', '1 andar'),
-(2, 'Infinity Norte', 'Avenida Norte', '200', NULL),
-(3, 'Infinity Sul', 'Rua Sul', '300', 'Bloco A'),
-(4, 'Infinity Leste', 'Avenida Leste', '400', 'Sala 5'),
-(5, 'Infinity Oeste', 'Rua Oeste', '500', NULL);
+(1, 'Infinity Salvador', 'Alameda Salvador', '1057', 'Edf. Salvador Shopping Business, Torre Europa, Sala 310'),
+(2, 'Infinity Fortaleza', 'Avenida Santos Dumont', 'S/N', 'Aldeota'),
+(3, 'Infinity Belo Horizonte', 'Avenida do Contorno', '6480', 'Loja 01, Savassi'),
+(4, 'Infinity Recife', 'Avenida República do Líbano', '256', 'Pina'),
+(5, 'Infinity São Paulo', 'Avenida Paulista', '777', 'Edf. Viking, Sala 12');
 
 -- ============================================================
 -- 24. CURSO
