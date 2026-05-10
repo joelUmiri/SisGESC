@@ -1,6 +1,7 @@
 USE DB_INFINITY_SCHOOL;
 
 -- SELECT SIMPLES --------INICIO--------
+
 select pk_cpf, primeiro_nome, sobrenome from tb_pessoa;
 select pk_fk_ra, data_matricula, status_matricula from tb_matricula;
 select pk_fk_ra, data_matricula, status_matricula from tb_matricula where status_matricula = "Cursando";
@@ -133,4 +134,105 @@ COMMIT;
 
 -- SELECTS (OLAP) --------INICIO--------
 
+-- Predição de Risco de Evasão Acadêmica por Curso
+SELECT 
+    da.nome_completo,
+    dtur.nome_curso,
+    AVG(fa.nota) AS media_final,
+    SUM(fa.total_faltas) AS total_faltas,
+    CASE 
+        WHEN AVG(fa.nota) < 6.0 AND SUM(fa.total_faltas) > 10 THEN 'Risco Crítico'
+        WHEN AVG(fa.nota) < 7.0 OR SUM(fa.total_faltas) > 5 THEN 'Atenção'
+        ELSE 'Estável'
+    END AS status_preditivo
+FROM fato_academico fa
+JOIN dim_aluno da ON fa.sk_aluno = da.sk_aluno
+JOIN dim_turma dtur ON fa.sk_turma = dtur.sk_turma
+GROUP BY da.sk_aluno, dtur.nome_curso;
+    
+-- Predição de Risco de Burnout e Sobrecarga de Funcionários
+SELECT
+    df.nome_completo,
+    SUM(frh.horas_trabalhadas) AS total_horas,
+    SUM(frh.horas_extra) AS horas_extras,
+    SUM(frh.qtd_faltas_ponto) AS faltas,
+    CASE
+        WHEN SUM(frh.horas_extra) > 20
+             AND SUM(frh.qtd_faltas_ponto) > 3
+             THEN 'ALTO RISCO DE BURNOUT'
+        WHEN SUM(frh.horas_extra) > 10
+             THEN 'RISCO MODERADO'
+        ELSE 'RISCO BAIXO'
+    END AS previsao_rh
+FROM fato_rh frh
+JOIN dim_funcionario df
+    ON df.sk_funcionario = frh.sk_funcionario
+GROUP BY
+    df.nome_completo
+ORDER BY
+    horas_extras DESC;
+
+-- Predição de risco de evasão por curso
+SELECT
+    dtu.nome_curso,
+    COUNT(*) AS total_registros,
+    AVG(fa.nota) AS media_notas,
+    AVG(fa.total_faltas) AS media_faltas,
+    CASE
+        WHEN AVG(fa.nota) < 5
+             OR AVG(fa.total_faltas) > 12
+             THEN 'CURSO COM FORTE RISCO DE EVASAO'
+        WHEN AVG(fa.nota) < 7
+             THEN 'CURSO EM OBSERVACAO'
+        ELSE 'CURSO ESTAVEL'
+    END AS previsao_curso
+FROM fato_academico fa
+JOIN dim_turma dtu
+    ON dtu.sk_turma = fa.sk_turma
+GROUP BY
+    dtu.nome_curso
+ORDER BY
+    media_notas ASC;
+    
+-- Predição de necessidade de contratação por departamento
+SELECT
+    df.departamento,
+    COUNT(*) AS total_funcionarios,
+    AVG(frh.horas_extra) AS media_horas_extras,
+    AVG(frh.qtd_faltas_ponto) AS media_faltas,
+    CASE
+        WHEN AVG(frh.horas_extra) > 15
+            THEN 'NECESSIDADE ALTA DE CONTRATACAO'
+        WHEN AVG(frh.horas_extra) > 8
+            THEN 'POSSIVEL SOBRECARGA'
+        ELSE 'QUADRO ESTAVEL'
+    END AS previsao_departamento
+FROM fato_rh frh
+JOIN dim_funcionario df
+    ON df.sk_funcionario = frh.sk_funcionario
+GROUP BY
+    df.departamento
+ORDER BY
+    media_horas_extras DESC;
+    
+-- Predição de retenção/permanência de alunos
+SELECT
+    da.nome_completo,
+    AVG(fa.nota) AS media_notas,
+    SUM(fa.total_faltas) AS total_faltas,
+    CASE
+        WHEN AVG(fa.nota) >= 8
+             AND SUM(fa.total_faltas) < 5
+             THEN 'ALTA CHANCE DE RETENCAO'
+        WHEN AVG(fa.nota) >= 6
+             THEN 'RETENCAO MODERADA'
+        ELSE 'RISCO DE EVASAO'
+    END AS previsao_permanencia
+FROM fato_academico fa
+JOIN dim_aluno da
+    ON da.sk_aluno = fa.sk_aluno
+GROUP BY
+    da.nome_completo
+ORDER BY
+    media_notas DESC;
 -- SELECTS (OLAP) --------FIM-----------
