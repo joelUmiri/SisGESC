@@ -60,8 +60,8 @@ SELECT
     IFNULL(
         (SELECT GROUP_CONCAT(tf.nome_formacao SEPARATOR ', ') 
          FROM tb_funcionario_formacao tff 
-         JOIN tb_formacao tf ON tff.fk_id_formacao = tf.pk_id_formacao 
-         WHERE tff.fk_n_contratacao = f.pk_n_contratacao), 
+         JOIN tb_formacao tf ON tff.pk_fk_id_formacao = tf.pk_id_formacao 
+         WHERE tff.pk_fk_n_contratacao = f.pk_n_contratacao), 
     'N/A') AS formacao 
 FROM tb_pessoa p
 JOIN tb_funcionario f ON p.pk_cpf = f.fk_cpf
@@ -198,28 +198,7 @@ ON DUPLICATE KEY UPDATE
     nome_fantasia = VALUES(nome_fantasia);
 
 -- ============================================================
--- 7. PRODUTO
--- ============================================================
-select count(*) from dim_produto;
-
--- Inserção do dummy produto (Produto Zero)
-SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO';
-INSERT INTO dim_produto (sk_produto, codigo_produto_operacional, nome_produto)
-VALUES (0, 0, 'NÃO APLICÁVEL / SERVIÇO')
-ON DUPLICATE KEY UPDATE sk_produto = 0;
-SET SESSION sql_mode='';
-
--- Carga dos produtos reais
-INSERT INTO dim_produto (codigo_produto_operacional, nome_produto)
-SELECT 
-    pk_id_produto, -- Assumindo que este é o nome na tb_produto
-    nome_produto
-FROM tb_produto
-ON DUPLICATE KEY UPDATE
-    nome_produto = VALUES(nome_produto);
-
--- ============================================================
--- 8. STATUS
+-- 7. STATUS
 -- ============================================================
 select count(*) from dim_status;
 
@@ -234,7 +213,7 @@ ON DUPLICATE KEY UPDATE
 status_nome = VALUES(status_nome);
 
 -- ============================================================
--- 9. NATUREZA FINANCEIRA
+-- 8. NATUREZA FINANCEIRA
 -- ============================================================
 select count(*) from dim_natureza_financeira;
 
@@ -247,7 +226,7 @@ codigo_operacional=values(codigo_operacional),
 tipo_movimentacao=values(tipo_movimentacao);
 
 -- ============================================================
--- 10. NATUREZA FINANCEIRA
+-- 9. TEMPO
 -- ============================================================
 select count(*) from dim_tempo;
 
@@ -1407,7 +1386,7 @@ UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Dia da Consciência Negra
 UPDATE dim_tempo SET flag_feriado = 1, nome_feriado = 'Natal' WHERE sk_tempo = 20271225;
 
 -- ============================================================
--- 11. FATO_ACADEMICO
+-- 10. FATO_ACADEMICO
 -- ============================================================
 
 select count(*) from fato_academico;
@@ -1482,108 +1461,76 @@ JOIN dim_tempo dtempo ON dtempo.data_completa = m.data_matricula
 WHERE m.nota4 IS NOT NULL;
     
 -- --------------------------------------------------------------------------
--- INSERIR FATO_FINANCEIRO
+-- 11. FATO_FINANCEIRO
 -- --------------------------------------------------------------------------
 
 INSERT INTO fato_financeiro (
-    sk_tempo, sk_unidade, sk_forma_pagamento, sk_natureza, 
-    sk_entidade_id, num_documento, valor_total, quantidade
-)
+     sk_tempo, 
+     sk_unidade, 
+     sk_forma_pagamento, 
+     sk_natureza, 
+     sk_aluno, 
+     sk_fornecedor, 
+     num_documento, 
+     valor_total, 
+     quantidade 
+) 
 SELECT 
-    dt.sk_tempo, 
-    du.sk_unidade, 
-    dfp.sk_forma_pagamento, 
-    dn.sk_natureza, 
-    da.sk_aluno, 
-    men.pk_nsu,
-    pg.valor_pago, 
-    1
-FROM tb_pagamento pg
-JOIN tb_conta_receber cr ON cr.pk_id_conta_receber = pg.fk_id_conta_receber
-JOIN tb_mensalidade men ON men.pk_nsu = cr.fk_nsu
-JOIN tb_contrato c ON c.pk_registro_nrcontrato = men.fk_registro_nrcontrato
-JOIN dim_aluno da ON da.ra = c.fk_ra
-JOIN tb_turma t ON t.pk_id_turma = c.fk_id_turma
-JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
-JOIN dim_tempo dt ON dt.data_completa = pg.data_pagamento
-JOIN dim_forma_pagamento dfp ON LOWER(dfp.forma_pagamento) = LOWER(pg.forma_pagamento)
-JOIN dim_natureza_financeira dn ON dn.codigo_operacional = 1; -- 1. Mensalidade
+     dt.sk_tempo, 
+     du.sk_unidade, 
+     dfp.sk_forma_pagamento, 
+     dn.sk_natureza, 
+     da.sk_aluno, 
+     0, -- sk_fornecedor (Não Aplicável para mensalidade)
+     men.pk_nsu, 
+     pg.valor_pago, 
+     1 
+FROM tb_pagamento pg 
+JOIN tb_conta_receber cr ON cr.pk_id_conta_receber = pg.fk_id_conta_receber 
+JOIN tb_mensalidade men ON men.pk_nsu = cr.fk_nsu 
+JOIN tb_contrato c ON c.pk_registro_nrcontrato = men.fk_registro_nrcontrato 
+JOIN dim_aluno da ON da.ra = c.fk_ra 
+JOIN tb_turma t ON t.pk_id_turma = c.fk_id_turma 
+JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade 
+JOIN dim_tempo dt ON dt.data_completa = pg.data_pagamento 
+JOIN dim_forma_pagamento dfp ON LOWER(dfp.forma_pagamento) = LOWER(pg.forma_pagamento) 
+JOIN dim_natureza_financeira dn ON dn.codigo_operacional = 1;
 
 INSERT INTO fato_financeiro (
-    sk_tempo, 
-    sk_unidade, 
-    sk_forma_pagamento, 
-    sk_natureza, 
-    sk_entidade_id, 
-    num_documento, -- Adicionado aqui
-    valor_total, 
-    quantidade
-)
+     sk_tempo, 
+     sk_unidade, 
+     sk_forma_pagamento, 
+     sk_natureza, 
+     sk_aluno, 
+     sk_fornecedor, 
+     num_documento, 
+     valor_total, 
+     quantidade 
+) 
 SELECT 
-    dt.sk_tempo, 
-    du.sk_unidade, 
-    dfp.sk_forma_pagamento, 
-    dn.sk_natureza, 
-    da.sk_aluno, 
-    men.pk_nsu, -- Passando o NSU para identificar de qual parcela é o encargo
-    (COALESCE(i.multa, 0) + COALESCE(i.juros, 0)), 
-    1
-FROM tb_inadimplencia i
-JOIN tb_mensalidade men ON i.fk_nsu = men.pk_nsu
-JOIN tb_conta_receber cr ON cr.fk_nsu = men.pk_nsu
-JOIN tb_pagamento pg ON pg.fk_id_conta_receber = cr.pk_id_conta_receber
-JOIN tb_contrato c ON c.pk_registro_nrcontrato = men.fk_registro_nrcontrato
-JOIN dim_aluno da ON da.ra = c.fk_ra
-JOIN tb_turma t ON t.pk_id_turma = c.fk_id_turma
-JOIN dim_unidade du ON du.id_unidade = t.fk_id_unidade
-JOIN dim_tempo dt ON dt.data_completa = pg.data_pagamento
-JOIN dim_forma_pagamento dfp ON LOWER(dfp.forma_pagamento) = LOWER(pg.forma_pagamento)
-JOIN dim_natureza_financeira dn ON dn.codigo_operacional = 2 -- 2. Encargos
-WHERE (i.multa + i.juros) > 0;
-
-INSERT INTO fato_financeiro (
-    sk_tempo,
-    sk_unidade,
-    sk_forma_pagamento,
-    sk_natureza,
-    sk_entidade_id,
-    num_documento,
-    valor_total,
-    quantidade
-)
-SELECT 
-    dt.sk_tempo,
-    du.sk_unidade,
-    0,
-    dn.sk_natureza,
-    df.sk_fornecedor,
-    c.pk_nfe,
-    SUM(ic.valor_unitario * ic.qtd),
-    SUM(ic.qtd)
-FROM tb_item_compra ic
-JOIN tb_compra c 
-    ON c.pk_nfe = ic.pk_fk_nfe
-JOIN dim_fornecedor df 
-    ON df.cnpj = c.fk_cnpj
-JOIN tb_conta_pagar cp 
-    ON cp.fk_nfe = c.pk_nfe
-JOIN dim_tempo dt 
-    ON dt.data_completa = cp.data_pagamento
-JOIN tb_unidade tu 
-    ON tu.pk_id_unidade = 1
-JOIN dim_unidade du 
-    ON du.id_unidade = tu.pk_id_unidade
-JOIN dim_natureza_financeira dn 
-    ON dn.codigo_operacional = 3 -- 3. Compra
-GROUP BY
-    dt.sk_tempo,
-    du.sk_unidade,
-    dn.sk_natureza,
-    df.sk_fornecedor,
-    c.pk_nfe;
-
+     dt.sk_tempo, 
+     1, -- sk_unidade (Geralmente 1 para Sede/Adm em despesas)
+     1, -- sk_forma_pagamento (Definir padrão ou mapear de tb_conta_pagar se houver)
+     dn.sk_natureza, 
+     0, -- sk_aluno (Não Aplicável para fornecedor)
+     df.sk_fornecedor, 
+     cp.fk_nfe, 
+     SUM(ic.valor_unitario * ic.qtd), 
+     SUM(ic.qtd)
+FROM tb_conta_pagar cp
+JOIN tb_item_compra ic ON ic.pk_fk_nfe = cp.fk_nfe
+JOIN tb_compra c ON c.pk_nfe = cp.fk_nfe
+JOIN dim_fornecedor df ON df.cnpj = c.fk_cnpj
+JOIN dim_tempo dt ON dt.data_completa = cp.data_pagamento
+JOIN dim_natureza_financeira dn ON dn.codigo_operacional = 3 -- 3 = Compra
+GROUP BY 
+     dt.sk_tempo, 
+     df.sk_fornecedor, 
+     cp.fk_nfe, 
+     dn.sk_natureza;
+select * from fato_financeiro;
 -- --------------------------------------------------------------------------
--- INSERIR FATO_RH
+-- 12. FATO_RH
 -- --------------------------------------------------------------------------
 INSERT INTO fato_rh (
     sk_funcionario,
