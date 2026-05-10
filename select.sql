@@ -9,7 +9,7 @@ select pk_fk_id_turma, pk_dia_semana, pk_hora_inicio, hora_fim from tb_grade_hor
 select pk_n_contratacao, dt_admissao, dt_desligamento, status_funcionario from tb_funcionario;
 select pk_id_pagamento, valor_pago, data_pagamento, forma_pagamento from tb_pagamento;
 
--- SELECT SIMPLES --------FIM--------
+-- SELECT SIMPLES --------FIM-------------
 
 -- SUBSELECT (OLTP) --------INICIO--------
 
