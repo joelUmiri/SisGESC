@@ -23,7 +23,7 @@ CREATE TABLE `tb_email` (
 );
 
 CREATE TABLE `tb_telefone` (
-  `pk_num_pais` char(3) DEFAULT '55',
+  `pk_num_pais` char(3) NOT NULL DEFAULT '55',
   `pk_ddd` char(2) NOT NULL,
   `pk_numero` char(9) NOT NULL,
   PRIMARY KEY (`pk_num_pais`, `pk_ddd`, `pk_numero`),
@@ -665,13 +665,6 @@ CREATE TABLE dim_fornecedor (
     nome_fantasia VARCHAR(45)
 );
 
-CREATE TABLE dim_produto (
-    sk_produto INT PRIMARY KEY AUTO_INCREMENT,
-    codigo_produto_operacional INT unique, -- O ID que está na tb_produto
-    nome_produto VARCHAR(45)
-    -- categoria_produto VARCHAR(30)   -- Ex: 'Limpeza', 'Escritório', 'Informática'
-);
-
 CREATE TABLE dim_status (
     sk_status INT PRIMARY KEY AUTO_INCREMENT,
     status_nome VARCHAR(50) NOT NULL UNIQUE
@@ -735,19 +728,29 @@ CREATE TABLE fato_financeiro (
     sk_tempo INT NOT NULL,
     sk_unidade INT NOT NULL,
     sk_forma_pagamento INT NOT NULL,
-    sk_natureza INT NOT NULL, --  1=Mensalidade, 2=Encargo, 3=Compra
-    sk_entidade_id INT NOT NULL, -- (Aluno ou Fornecedor)
+    sk_natureza INT NOT NULL, -- 1=Mensalidade, 2=Encargo, 3=Compra
+    sk_aluno INT NOT NULL,    -- SK explícito para Aluno
+    sk_fornecedor INT NOT NULL, -- SK explícito para Fornecedor
     
-    valor_total DECIMAL(10,2) NOT NULL, -- TODA a grana aqui
-    quantidade INT DEFAULT 1,      -- Qtd de itens ou mensalidades
-    num_documento VARCHAR(50) NOT NULL, -- NSU DA MENSALIDADE
+    valor_total DECIMAL(10,2) NOT NULL,
+    quantidade INT DEFAULT 1,
+    num_documento VARCHAR(50) NOT NULL, -- NSU ou Número da Nota
     
-    PRIMARY KEY (sk_tempo, sk_unidade, sk_forma_pagamento, sk_natureza, sk_entidade_id,num_documento),
+    PRIMARY KEY (
+        sk_tempo, 
+        sk_unidade, 
+        sk_forma_pagamento, 
+        sk_natureza, 
+        sk_aluno, 
+        sk_fornecedor, 
+        num_documento
+    ),
     FOREIGN KEY (sk_tempo) REFERENCES dim_tempo(sk_tempo),
     FOREIGN KEY (sk_unidade) REFERENCES dim_unidade(sk_unidade),
     FOREIGN KEY (sk_forma_pagamento) REFERENCES dim_forma_pagamento(sk_forma_pagamento),
-    FOREIGN KEY (sk_natureza) REFERENCES dim_natureza_financeira(sk_natureza)
-    -- A foreign key de sk_entidade_id é definida na inserção, caso seja aluno ou fornecedor
+    FOREIGN KEY (sk_natureza) REFERENCES dim_natureza_financeira(sk_natureza),
+    FOREIGN KEY (sk_aluno) REFERENCES dim_aluno(sk_aluno),
+    FOREIGN KEY (sk_fornecedor) REFERENCES dim_fornecedor(sk_fornecedor)
 );
 
 -- 3. Fato RH-> Granularidade: Um registro por funcionário, por unidade e por mês de referência.
